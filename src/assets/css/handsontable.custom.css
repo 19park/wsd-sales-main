@@ -1,0 +1,147 @@
+.horizontal-form {
+  margin: 0
+}
+
+.hot-wrap {
+  overflow: auto;
+  margin-bottom: 10px;
+}
+
+.hot-wrap>div {
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.file-input {
+  padding-top: 10px;
+  background: #eee;
+}
+
+.file-input label {
+  color: #0e0e0e;
+}
+
+.handsontable th {
+  font-size: 0.9em;
+}
+
+.handsontable td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.handsontable td.empty {
+  background: red;
+  color: #fff;
+}
+
+.handsontable td.empty input[type='checkbox'] {
+  display: block;
+  margin: 0 auto;
+}
+
+.handsontable td.minusTextColor {
+  color: red;
+}
+
+.handsontable td.minusTextColor input[type='checkbox'] {
+  align: center;
+
+}
+
+/*.handsontable tr th+td.empty { text-align:center; }*/
+
+.handsontable td.subTotal {
+  background: #ffe599ff;
+  color: #000;
+}
+
+.handsontable td.total {
+  background: #ea9999ff;
+  color: #000;
+}
+
+.handsontable td.complete {
+  background: #aaaaaa;
+  color: #000;
+}
+
+.handsontable td.cancle {
+  position:relative;
+  /*text-decoration: line-through;*/
+}
+.handsontable td.cancle::after {
+  content:''; position:absolute; width:100%; height:1px; background-color:red; top:50%; left:0;
+}
+
+.handsontable td.completeRedText {
+  background: #aaaaaa;
+  color: #FF0000;
+}
+
+.handsontable td.orangeBGAndMinus {
+  background: #ffa94c;
+  color: #ff0000;
+}
+
+.handsontable td.orangeBGAndPlus {
+  background: #ffa94c;
+  color: #000000;
+}
+
+.handsontable td.whiteBGAndMinus {
+  background: #ffffff;
+  color: #ff0000;
+}
+
+.handsontable td.whiteBGAndPlus {
+  background: #ffffff;
+  color: #000000;
+}
+
+/*.handsontable tr th+td.complete { text-align:center; }*/
+.handsontable td.complete input[type='checkbox'] {
+  display: block;
+  margin: 0 auto;
+}
+
+.handsontable .htCheckboxRendererInput {
+  transform: scale(1.5);
+}
+
+.handsontable td.blacktext {
+  color: #000;
+}
+
+.handsontable .currentRow {
+  background: #adf3ff;
+}
+
+.input-80 {
+  width: 80px;
+}
+
+.input-100 {
+  width: 100px;
+}
+
+.input-150 {
+  width: 150px;
+}
+
+.input-200 {
+  width: 200px;
+}
+
+.input-250 {
+  width: 250px;
+}
+
+.input-300 {
+  width: 300px;
+}
