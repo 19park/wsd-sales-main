@@ -191,7 +191,8 @@
                 }).catch((err) => {
                     this.isLoading = false
                     loader.hide()
-                    this.getErrorMsg(err)
+
+                    this.$snotify.error('상품 목록 조회 실패', this.parseErrorMsg(err))
                 })
             },
             doClickComp () {

@@ -2,14 +2,13 @@
     <b-card no-body>
         <b-card-header class="d-flex justify-content-between" id="list-header">
             <div class="box">
-                <div class="d-inline-block">Total : <span class="tot-print">0</span></div>
-                <div class="d-inline-block ml-2">
+                <div class="d-inline-block">
                     <div class="d-inline-block">
                         <datetime v-model="model.startDay"
                                   format="yyyy-MM-dd"
                                   input-id="rangeDate"
                                   input-class="form-control d-inline-block input-90">
-                            <label for="rangeDate" slot="before">검색기간: </label>
+                            <label for="rangeDate" slot="before">기간: </label>
                         </datetime>
                     </div>
                     <CustomerPicker :model="model.customer"
@@ -20,15 +19,6 @@
                         리스트조회
                     </button>
                 </div>
-            </div>
-
-            <div class="box">
-                <button type="button" class="btn btn-excel" @click="goExcel()"
-                        style="width:60px;">엑셀
-                </button>
-                <button type="button" class="btn btn-print" @click="goPrint()"
-                        style="width:60px;">인쇄
-                </button>
             </div>
         </b-card-header>
         <b-card-body id="list-body" class="p-0">
@@ -146,6 +136,7 @@
         </b-card-body>
         <b-card-footer id="list-footer">
             <div class="d-flex justify-content-between">
+                <div class="d-inline-block">Total : <span class="tot-print">0</span></div>
                 <paginate v-model="listModel.page"
                           :pageCount="listModel.total"
                           :prevText="'<<'"
@@ -159,12 +150,18 @@
                           :click-handler="doListClick">
                 </paginate>
                 <div class="float-right d-flex align-items-center">
-                        <span class="mr-3">
-                            <input type="checkbox" value="Y" id="re-print">
-                            <label for="re-print">재발행포함</label>
-                        </span>
-                    <button type="button" class="btn btn-print"
-                            @click="$('#popPrintAll').modal('show');">명세서일괄인쇄
+                    <!--<span class="mr-3">-->
+                        <!--<input type="checkbox" value="Y" id="re-print">-->
+                        <!--<label for="re-print">재발행포함</label>-->
+                    <!--</span>-->
+                    <button type="button" class="btn btn-print mr-1"
+                            @click="$('#popPrintAll').modal('show')">명세서일괄인쇄
+                    </button>
+                    <button type="button" class="btn btn-excel mr-1" @click="goExcel()"
+                            style="width:60px;">엑셀
+                    </button>
+                    <button type="button" class="btn btn-print" @click="goPrint()"
+                            style="width:60px;">인쇄
                     </button>
                 </div>
             </div>

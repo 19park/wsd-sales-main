@@ -4,10 +4,10 @@
             <table class="table table-bordered slim mb-0">
                 <tbody>
                 <tr class="title">
-                    <th width="7%" class="b1">
-                        <strong style="font-size:1.6em;letter-spacing: -0.025rem;">매출등록</strong>
-                    </th>
-                    <td width="55%">
+                    <!--<th width="7%" class="b1">-->
+                    <!--<strong style="font-size:1.6em;letter-spacing: -0.025rem;">매출등록</strong>-->
+                    <!--</th>-->
+                    <td width="62%">
                         <div class="d-inline-block">
                             <datetime v-model="model.salesDay"
                                       format="yyyy-MM-dd"
@@ -82,7 +82,7 @@
                                 <font-awesome-icon icon="save"/>&nbsp;저장하기(F8)
                             </button>
                             <button @click="doSubmit('P')"
-                                    class="btn btn-print">저장 후 거래명세표 인쇄
+                                    class="btn btn-print">저장 후 명세서 인쇄
                             </button>
 
                             <button @click="$router.go(0)" class="btn btn-add">
@@ -155,6 +155,7 @@
     import Handsontable from 'handsontable-pro'
     import numeral from 'numeral'
     import _get from 'lodash/get'
+    import _merge from 'lodash/merge'
     import _cloneDeep from 'lodash/cloneDeep'
 
     // 조건조회 관련
@@ -289,6 +290,7 @@
                 hotOptions: {
                     salesMainSchema: {
                         // ID: undefined,
+                        IS_SUMMARY: false,
                         IS_EMPTY: false,
                         HISTORY: null,
                         SALES_DIV: null,
@@ -324,7 +326,7 @@
                         MEMO: null
                     },
                     colWidths: [
-                        90, 180, 120, 70, 70, 70, 90, 100, 70, 100, 90, 100, 70, 100, 50, 90, 130, 50
+                        85, 170, 120, 70, 70, 70, 80, 100, 70, 90, 90, 100, 60, 100, 40, 80, 80, 50
                     ],
                     // TODO 수량 계란에 따라 판/알 처리
                     colHeaders: [
@@ -334,6 +336,9 @@
                     columns: [
                         // bind mounted
                     ]
+                },
+                node: {
+                    table: null
                 }
             }
         },
@@ -365,7 +370,20 @@
             this.hotOptions.columns = [
                 {data: 'PRODUCT.VIEW_CODE', type: 'text', readOnly: true},
                 {data: 'PRODUCT.PRODUCT_NAME', type: 'text', readOnly: true},
-                {data: 'PRODUCT.STANDARD', type: 'text', readOnly: true},
+                {
+                    data: 'PRODUCT.STANDARD', type: 'text', readOnly: true,
+                    renderer: function (hot, td, row, column, prop, value, cellProperties) {
+                        Handsontable.renderers.BaseRenderer.apply(this, arguments)
+
+                        if (!hot.getDataAtRowProp(row, 'IS_EMPTY') && hot.countRows() > 1) {
+                            const retValue = `[${hot.getDataAtRowProp(row, 'PRODUCT.BOX_GET_AMOUNT')}]${value}`
+                            td.innerHTML = retValue
+                        } else {
+                            td.innerHTML = ''
+                        }
+                        return td
+                    }
+                },
                 {data: 'BOX_AMOUNT', type: 'numeric', numericFormat: {pattern: this.getAmtNumericPattern}},
                 {data: 'ITEM_AMOUNT', type: 'numeric', numericFormat: {pattern: this.getAmtNumericPattern}},
                 {
@@ -374,7 +392,7 @@
                     numericFormat: {pattern: this.getAmtNumericPattern},
                     readOnly: true
                 },
-                {data: 'BEFORE_PPU', type: 'numeric', numericFormat: {pattern: this.getPpuNumericPattern}},
+                {data: 'SALES_PPU', type: 'numeric', numericFormat: {pattern: this.getPpuNumericPattern}},
                 {
                     data: 'SALES_PRICE',
                     type: 'numeric',
@@ -441,15 +459,23 @@
             fnCreateTable () {
                 const self = this
                 let HotTable = document.getElementById('hot-table')
+                self.node.table = HotTable
 
-                const initData = _cloneDeep(this.hotOptions.salesMainSchema)
-                initData.IS_EMPTY = true
+                let initData = []
+                const emptyData = _cloneDeep(this.hotOptions.salesMainSchema)
+                const summaryData = _cloneDeep(this.hotOptions.salesMainSchema)
+                emptyData.IS_EMPTY = true
+                summaryData.IS_SUMMARY = true
+
+                initData.push(emptyData)
+                initData.push(summaryData)
+
                 this.hot = new Handsontable(HotTable, {
                     data: initData,
                     dataSchema: this.hotOptions.salesMainSchema,
                     selectionMode: 'single',
                     autoWrapRow: true,
-                    // fixedColumnsLeft: 3,
+                    // fixedColumnsLeft: 2,
                     stretchH: 'all',
                     rowHeaders: true,
                     colHeaders: this.hotOptions.colHeaders,
@@ -458,6 +484,7 @@
                     manualColumnResize: true,
                     enterBeginsEditing: false,
                     outsideClickDeselects: false,
+                    fixedRowsBottom: 1,
                     hiddenColumns: {
                         columns: [],
                         indicators: false
@@ -468,14 +495,17 @@
                             "row_below": {name: '아래에 줄 추가'}
                         }//['row_above', 'row_below']
                     },
+                    afterRender: () => {
+                        this.doFixRowRenderer()
+                    },
                     afterScrollVertically: () => {
                         // TODO 스크롤 시 X버튼이 렌더링안돼서 디바운싱렌더처리
                         this.debounce(this.hot.render())
                     },
                     afterOnCellMouseOver: function (e, coords) {
-                        if(self.model.salesMainItemList.length && coords.col === 16) {
+                        if (self.model.salesMainItemList.length && coords.col === 16) {
                             const GET_LAYER = document.querySelector('.profitLayer')
-                            if(GET_LAYER) return
+                            if (GET_LAYER) return
 
                             const r = coords.row
                             const getState = self.getStoreState
@@ -487,14 +517,14 @@
                             var GET_PURCHASE_PPU = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PPU'))
                             var GET_BOX_GET_AMT = parseFloat(this.getDataAtRowProp(r, 'PRODUCT.BOX_GET_AMOUNT'))
                             var SET_PROFIT_PER = (GET_TOTAL_PRICE === 0) ?
-                                                    0 : (GET_PROFIT_PRICE / Math.abs(GET_TOTAL_PRICE)) * 100
+                                0 : (GET_PROFIT_PRICE / Math.abs(GET_TOTAL_PRICE)) * 100
 
                             MAKE_TOOLTIP = `매입단가 : ${numeral(GET_PURCHASE_PPU).format()}<br/>`
-                            if(getState.AMT_DIV === '2') {
-                                MAKE_TOOLTIP += `매입박스단가: ${numeral(GET_PURCHASE_PPU*GET_BOX_GET_AMT).format()}<br/>`
+                            if (getState.AMT_DIV === '2') {
+                                MAKE_TOOLTIP += `매입박스단가: ${numeral(GET_PURCHASE_PPU * GET_BOX_GET_AMT).format()}<br/>`
                             }
                             MAKE_TOOLTIP += `이익금: ${numeral(GET_PROFIT_PRICE).format()}<br/>`
-                                         + `이익율 : ${numeral(SET_PROFIT_PER).format()}%`
+                                + `이익율 : ${numeral(SET_PROFIT_PER).format()}%`
 
                             let EL_LAYER = document.createElement('div')
                             EL_LAYER.className = 'view-box'
@@ -506,20 +536,24 @@
                             let SET_DEFAULT_HEIGHT = 85
 
                             // 레이어가 나타날 위치를 셋팅한다.
-                            let SET_POS_X = e.clientX + 10
+                            let SET_POS_X = e.clientX - (SET_DEFAULT_WIDTH * 2)
                             let SET_POS_Y = e.clientY + 5
 
                             // 레이어가 화면 크기를 벗어나면 위치를 바꾸어 배치한다.
-                            if( SET_POS_X + SET_DEFAULT_WIDTH > GET_WIDTH ) {
+                            if (SET_POS_X + SET_DEFAULT_WIDTH > GET_WIDTH) {
                                 SET_POS_X -= SET_DEFAULT_WIDTH
                             }
-                            if( SET_POS_Y + SET_DEFAULT_HEIGHT > GET_HEIGHT ) {
+                            if (SET_POS_Y + SET_DEFAULT_HEIGHT > GET_HEIGHT) {
                                 SET_POS_Y -= SET_DEFAULT_HEIGHT
                             }
 
                             // 상단기준점(0,0) 밖으로 벗어난다면 상단기준점(0,0)에 배치
-                            if( SET_POS_X < 0 ) { SET_POS_X = 0 }
-                            if( SET_POS_Y < 0 ) { SET_POS_Y = 0 }
+                            if (SET_POS_X < 0) {
+                                SET_POS_X = 0
+                            }
+                            if (SET_POS_Y < 0) {
+                                SET_POS_Y = 0
+                            }
 
                             let SET_PROFIT_LAYER = document.createElement('div')
                             SET_PROFIT_LAYER.appendChild(EL_LAYER)
@@ -538,9 +572,11 @@
                         }
                     },
                     afterOnCellMouseOut: function (e, coords) {
-                        if(self.model.salesMainItemList.length && coords.col === 16) {
+                        if (self.model.salesMainItemList.length && coords.col === 16) {
                             const GET_LAYER = document.querySelector('.profitLayer')
-                            if(GET_LAYER) { self.removeElement(GET_LAYER) }
+                            if (GET_LAYER) {
+                                self.removeElement(GET_LAYER)
+                            }
                         }
                     },
                     afterOnCellMouseDown: function (e, coords) {
@@ -562,28 +598,6 @@
                                 break
                         }
                     },
-                    cells: (row, col) => {
-                        const cellPrp = {}
-
-                        switch (col) {
-                            case 16:
-                                cellPrp.readOnly = true
-                                cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
-                                    Handsontable.renderers.TextRenderer.apply(this, arguments)
-                                    td.className = 'htViewRow'
-                                    td.innerHTML = '<div class="btn-view">&nbsp;&nbsp;보기&nbsp;&nbsp;</div>'
-                                }
-                                break
-                            case 17:
-                                cellPrp.readOnly = true
-                                cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
-                                    Handsontable.renderers.TextRenderer.apply(this, arguments)
-                                    td.innerHTML = '<button class="btn btn-del">x</button>'
-                                }
-                                break
-                        }
-                        return cellPrp
-                    },
                     enterMoves: () => {
                         const MAX_COL = this.hot.getCellMeta(0, 0).columns.length - 1
                         if (this.hot.getSelected() >= MAX_COL) {
@@ -595,11 +609,25 @@
                     afterChange: (changes, source) => {
                         if (!changes) return
                         if (source === 'set') {
-                            // fnTotalSet()
+                            // 합계 계산
+                            this.doRenderSummary()
                         } else {
                             this.doCalculate(changes)
                         }
+                    },
+                    beforeKeyDown: function (e) {
+                        let sel = this.getSelected()
+                        if (!sel) return
+
+                        // 컨트롤 엔터 시 다음 줄로 이동
+                        if (e.which === 13 && e.ctrlKey) {
+                            this.selectCell(sel[0][0] + 1, 0)
+                        }
                     }
+                })
+
+                this.hot.updateSettings({
+                    cells: this.doCellRenderer
                 })
 
                 // TODO 라이센스 문구 제거
@@ -609,6 +637,81 @@
                 window.addEventListener("resize", this.debounce(() => {
                     this.hot.render()
                 }))
+            },
+
+            // HOT의 fix bottom row 뷰처리
+            doFixRowRenderer () {
+                // 현재 HOT의 높이
+                const GET_TABLE = this.node.table
+                const GET_TABLE_HEIGHT = GET_TABLE.clientHeight
+                const GET_MASTER = GET_TABLE.querySelector('.ht_master')
+                const GET_CONTENT = GET_MASTER.querySelector('.wtHider')
+                const GET_CONTENT_HEIGHT = GET_CONTENT.clientHeight
+                const GET_BOTTOM = GET_TABLE.querySelector('.ht_clone_bottom')
+                const GET_BOTTOM_HEADER = GET_TABLE.querySelector('.ht_clone_bottom_left_corner')
+
+                if (GET_CONTENT_HEIGHT < GET_TABLE_HEIGHT) {
+                    // 시트의 높이가 전체 높이보다 작으면 FIX BOTTOM 숨김
+                    GET_BOTTOM.style.display = 'none'
+                    GET_BOTTOM_HEADER.style.display = 'none'
+                } else {
+                    GET_BOTTOM.style.display = 'block'
+                    GET_BOTTOM_HEADER.style.display = 'block'
+                }
+            },
+
+            doCellRenderer (row, col) {
+                const cellPrp = {}
+                const HOT = this.hot
+
+                if (!HOT) {
+                    return {}
+                }
+                if (HOT.getDataAtRowProp(row, 'IS_EMPTY')) {
+                    cellPrp.readOnly = true
+                } else if (HOT.getDataAtRowProp(row, 'IS_SUMMARY')) {
+                    cellPrp.readOnly = true
+                    cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
+                        td.className = 'htBgSummary'
+                        if (
+                            ['BOX_AMOUNT', 'ITEM_AMOUNT', 'TOTAL_AMOUNT', 'SALES_PRICE', 'DC_PRICE',
+                                'SUPPLY_PRICE', 'TAX_PRICE', 'TOTAL_PRICE', 'SERVICE_AMOUNT'].includes(prop)
+                        ) {
+                            Handsontable.renderers.NumericRenderer.apply(this, arguments)
+                        } else {
+                            switch (prop) {
+                                case 'PRODUCT.PRODUCT_NAME':
+                                    td.innerHTML = '합계'
+                                    break
+                                case 'EVENT_DIV':
+                                    Handsontable.renderers.CheckboxRenderer.apply(this, arguments)
+                                    break
+                                default:
+                                    Handsontable.renderers.TextRenderer.apply(this, arguments)
+                                    break
+                            }
+                        }
+                    }
+                } else {
+                    switch (col) {
+                        case 16:
+                            cellPrp.readOnly = true
+                            cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
+                                Handsontable.renderers.TextRenderer.apply(this, arguments)
+                                td.className = 'htViewRow'
+                                td.innerHTML = '<div class="btn-view">&nbsp;&nbsp;보기&nbsp;&nbsp;</div>'
+                            }
+                            break
+                        case 17:
+                            cellPrp.readOnly = true
+                            cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
+                                Handsontable.renderers.TextRenderer.apply(this, arguments)
+                                td.innerHTML = '<button class="btn btn-del">x</button>'
+                            }
+                            break
+                    }
+                }
+                return cellPrp
             },
 
             /**
@@ -648,7 +751,7 @@
                 }
 
                 this.hot.deselectCell()
-                this.$root.$emit('bv::show::modal','pop-goods-multi-picker')
+                this.$root.$emit('bv::show::modal', 'pop-goods-multi-picker')
             },
             /**
              * 상품 팝업에서 선택된 정보를 hansOnTable 에 row 추가
@@ -734,15 +837,17 @@
 
             cbAddGoods (arr) {
                 // TODO 클릭한 ROW에 상품이 들어가도록 수정해야함
+                const HOT = this.hot
                 const makeArr = []
                 arr.forEach((e) => {
                     makeArr.push(this.formatData(e))
                 })
 
-                // 저장되어있는 data deepcopy
-                const getTableData = _cloneDeep(this.model.salesMainItemList)
-                // 추가 된 상품들과 union
-                // const makeNewData = _union(getTableData, makeArr)
+                // GET TABLE DATA
+                const getTableData = HOT.getSourceData()
+
+                // 합계와 빈줄 제거
+                // _remove(getTableData, (e)=> e.IS_EMPTY || e.IS_SUMMARY)
 
                 let makeNewData
                 if (getTableData.length) {
@@ -753,24 +858,68 @@
                     makeNewData = makeArr
                 }
 
-                // data에 deepcopy로 다시 저장업데이트
+                // TODO VUE DATA에 리스트를 저장해야하나?
                 this.model.salesMainItemList = _cloneDeep(makeNewData)
 
                 this.$nextTick(() => {
                     // 항상 맨아래 1줄 노출을위해 빈 객체 push
-                    let emptyData = _cloneDeep(this.hotOptions.salesMainSchema)
-                    emptyData.IS_EMPTY = true
-                    makeNewData.push(emptyData)
+                    // let emptyData = _cloneDeep(this.hotOptions.salesMainSchema)
+                    // emptyData.IS_EMPTY = true
+                    // makeNewData.push(emptyData)
 
                     // 데이터 로드 후 렌더링
-                    this.hot.loadData(makeNewData)
-                    this.hot.render()
-                    // BOX수량으로 포커싱
-                    this.hot.selectCell(this.selectedRowIndex, 3)
+                    // HOT.loadData(makeNewData)
+                    HOT.updateSettings({
+                        cells: this.doCellRenderer
+                    })
+                    HOT.render()
+
+                    // BOX 수량으로 포커싱
+                    HOT.selectCell(this.selectedRowIndex, 3)
+
+
+                    // 합계 계산
+                    this.doRenderSummary()
 
                     // 상품 팝업 숨김
-                    this.$root.$emit('bv::hide::modal','pop-goods-multi-picker')
+                    this.$root.$emit('bv::hide::modal', 'pop-goods-multi-picker')
                 })
+            },
+
+            doRenderSummary () {
+                const HOT = this.hot
+                const HOT_COUNT = HOT.countRows() - 1
+                let HOT_DATA = this.hot.getSourceData()
+                let TOTAL_SUMMARY = {
+                    BOX_AMOUNT: 0,
+                    ITEM_AMOUNT: 0,
+                    TOTAL_AMOUNT: 0,
+                    SALES_PRICE: 0,
+                    DC_PRICE: 0,
+                    SUPPLY_PRICE: 0,
+                    TAX_PRICE: 0,
+                    TOTAL_PRICE: 0,
+                    SERVICE_AMOUNT: 0
+                }
+                HOT_DATA.forEach((e, r) => {
+                    // 합계와 빈줄이 아닐때만 반복
+                    if (!e.IS_SUMMARY && !e.IS_EMPTY) {
+                        TOTAL_SUMMARY.BOX_AMOUNT += e.BOX_AMOUNT
+                        TOTAL_SUMMARY.ITEM_AMOUNT += e.ITEM_AMOUNT
+                        TOTAL_SUMMARY.TOTAL_AMOUNT += e.TOTAL_AMOUNT
+                        TOTAL_SUMMARY.SALES_PRICE += e.SALES_PRICE
+                        TOTAL_SUMMARY.DC_PRICE += e.DC_PRICE
+                        TOTAL_SUMMARY.SUPPLY_PRICE += e.SUPPLY_PRICE
+                        TOTAL_SUMMARY.TAX_PRICE += e.TAX_PRICE
+                        TOTAL_SUMMARY.TOTAL_PRICE += e.TOTAL_PRICE
+                        TOTAL_SUMMARY.SERVICE_AMOUNT += e.SERVICE_AMOUNT
+                    }
+                })
+
+                let SUMMARY_DATA = HOT.getSourceDataAtRow(HOT_COUNT)
+                _merge(SUMMARY_DATA, TOTAL_SUMMARY)
+
+                HOT.render()
             },
 
             // 금액과 부가세구분을 받아 공급가, 세액 리턴
@@ -823,7 +972,7 @@
                 //맨마지막줄 return
                 if (!arrGetData[0]) return
 
-                let nGetPpu = parseFloat(HOT.getDataAtRowProp(r, 'BEFORE_PPU')) // 단가
+                let nGetPpu = parseFloat(HOT.getDataAtRowProp(r, 'SALES_PPU')) // 단가
                 let nGetPrice = parseInt(HOT.getDataAtRowProp(r, 'SALES_PRICE'))
 
                 let nGetSupplyPrice = parseInt(HOT.getDataAtRowProp(r, 'SUPPLY_PRICE'))
@@ -1068,7 +1217,7 @@
 
                         HOT.setDataAtRowProp(new_values, 'set')
                         break
-                    case 'BEFORE_PPU':
+                    case 'SALES_PPU':
                         nTotPrice = nSumPrice - nGetDcPrice
 
                         new_values.push([r, 'SALES_PRICE', nSumPrice])
@@ -1089,6 +1238,7 @@
                         HOT.setDataAtRowProp(new_values, 'set')
                         break
                     case 'SERVICE_AMOUNT':
+                        HOT.setDataAtRowProp([], 'set')
                         break
                 }
 
@@ -1101,7 +1251,7 @@
                     nBPrice = Math.ceil(nSetPpu * (nTotAmt + nGetSerAmt)) // 입고합계금액
                 }
 
-                // 이익금액 계싼
+                // 이익금액 계산
                 let nProfitPrice = nAPrice - nBPrice
 
                 // 매출이아니면 금액 음수처리
@@ -1126,7 +1276,7 @@
                 upt_values.push([r, 'RECEIVE_PRICE', nBPrice])
 
                 HOT.setDataAtRowProp(new_values, 'set')
-                // fnTotalSet()
+                this.doRenderSummary()
             },
 
             // 매출 등록처리
