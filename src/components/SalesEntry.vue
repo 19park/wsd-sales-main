@@ -697,6 +697,23 @@
                     }
                 } else {
                     switch (col) {
+                        case 1:
+                            cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
+                                Handsontable.renderers.TextRenderer.apply(this, arguments)
+                                if (instance.getDataAtRowProp(row, 'HISTORY')) {
+                                    let iconElement = document.createElement('SPAN')
+                                    iconElement.innerText = 'NEW'
+                                    iconElement.className = 'icon-new'
+
+                                    let textElement = document.createElement('SPAN')
+                                    textElement.innerHTML = value
+
+                                    td.innerHTML = ''
+                                    td.appendChild(textElement)
+                                    td.insertBefore(iconElement, textElement)
+                                }
+                            }
+                            break
                         case 16:
                             cellPrp.readOnly = true
                             cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
@@ -723,6 +740,9 @@
              * 납품분 여부 true/false
              */
             doGoodsSearch (isDup, getRow) {
+                const HOT = this.hot
+                HOT.deselectCell()
+
                 if (!_get(this.model, 'salesDay')) {
                     this.showCommonAlert('매출일자를 선택해주세요.')
                     return
@@ -746,14 +766,12 @@
 
                 // 현재 클릭 ROW 값 저장
                 if (isDup) {
-                    this.selectedRowIndex = (this.hot.countRows()) ? this.hot.countRows() - 2 : 0
+                    this.selectedRowIndex = (HOT.countRows()) ? HOT.countRows() - 2 : 0
                     this.isGoodsPopDup = true
                 } else {
                     this.selectedRowIndex = getRow ? getRow : 0
                     this.isGoodsPopDup = false
                 }
-
-                this.hot.deselectCell()
                 this.$root.$emit('bv::show::modal', 'pop-goods-multi-picker')
             },
             /**
