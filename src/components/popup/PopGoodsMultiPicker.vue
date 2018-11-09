@@ -2,9 +2,7 @@
 <template>
     <card class="mb-0">
         <div slot="header">
-            <h4 class="card-title d-inline-block">거래처조회</h4>
-
-            <CustomerTypePicker ref="customer-type" wrap-classes="w-auto ml-3"/>
+            <h4 class="card-title d-inline-block">{{getPopName}}</h4>
         </div>
         <div class="box mb-3">
             <b-input-group>
@@ -21,26 +19,39 @@
             </b-input-group>
         </div>
         <div id="loader-container">
-            <ResultTable :hotOptions="hotOptions" @addLoad="doSearch" @rowClick="fnProdClick"/>
+            <ResultTable :hotOptions="hotOptions"
+                         ref="chkListTable"
+                         @addLoad="doSearch"
+                         @rowClick="fnProdClick"
+                         @chkClick="fnProdChkClick"/>
         </div>
-        <div class="mt-3">
-            <slot name="footer" v-if="$slots.footer"></slot>
+        <div class="mt-3 text-right clearfix">
+            <button class="btn btn-outline-dark float-left" @click="doCheckAll">전체선택</button>
+            <button class="btn btn-success" @click="doClickComp">선택완료</button>
+            <slot name="footer" v-if="$slots.footer">
+            </slot>
         </div>
     </card>
 </template>
 
 <script>
-    import {customer} from '../../api/index'
+    import {goods} from '../../api/index'
     import Common from '../mixin/common'
-    import _find from 'lodash/find'
-    import _get from 'lodash/get'
+    import alert from '../mixin/alert'
 
-    import ResultTable from './ResultTable.vue'
+    import ResultTable from './ResultTableChk.vue'
     import CustomerTypePicker from '../inputs/CustomerTypePicker.vue'
 
     export default {
-        name: 'PopCustomers',
-        mixins: [Common],
+        name: 'PopGoodsMultiPicker',
+        mixins: [Common, alert],
+        props: {
+            isDup: Boolean,
+            salesDay: String,
+            customerCode: String,
+            memberCode: String,
+            warehouseCode: String
+        },
         components: {
             ResultTable,
             CustomerTypePicker
@@ -53,37 +64,28 @@
                     init: false,
                     data: [],
                     model: {
-                        REG_NO: undefined,
-                        VIEW_CODE: undefined,
-                        CUSTOMER_CODE: undefined,
-                        CUSTOMER_NAME: undefined,
-                        C_AGENT_NO: undefined,
-                        CEO_NAME: undefined,
-                        MEMBER_CODE: undefined,
-                        TEL: undefined,
-                        CUSTOMER_BC: {
-                            NOW_BC: undefined
-                        },
-                        CREDIT_BC: undefined,
-                        BILL_PERCENT: undefined,
-                        BILL_TRANSFER: undefined,
-                        BANK_INFO: undefined
+                        CHECKED: false,
+                        HISTORY: null,
+                        PRODUCT: {},
+                        PURCHASE_PPU: null,
+                        SALES_PPU: null,
+                        STOCK: null
                     },
                     colWidths: [
-                        70, 130, 80, 70, 70, 80, 80
+                        30, 70, 130, 100, 100, 80, 80
                     ],
                     colHeaders: [
-                        '코드', '거래처명', '사업자번호', '대표자', '담당사원', '전화번호', '잔고'
+                        '', '코드', '상품명', '규격', '바코드', '입고단가', '현재고'
                     ],
                     columns: [
-                        {data: 'VIEW_CODE', type: 'text', readOnly: true},
-                        {data: 'CUSTOMER_NAME', type: 'text', readOnly: true},
-                        {data: 'C_AGENT_NO', type: 'text', readOnly: true},
-                        {data: 'CEO_NAME', type: 'text', readOnly: true},
-                        {data: 'MEMBER_NAME', type: 'text', readOnly: true},
-                        {data: 'TEL', type: 'text', readOnly: true},
+                        {data: 'CHECKED', type: 'checkbox', className: 'htCenter htMiddle'},
+                        {data: 'PRODUCT.VIEW_CODE', type: 'text', readOnly: true},
+                        {data: 'PRODUCT.PRODUCT_NAME', type: 'text', readOnly: true},
+                        {data: 'PRODUCT.STANDARD', type: 'text', readOnly: true},
+                        {data: 'PIECE_BARCODE', type: 'text', readOnly: true},
+                        {data: 'PURCHASE_PPU', type: 'text', readOnly: true},
                         {
-                            data: 'CUSTOMER_BC.NOW_BC',
+                            data: 'STOCK',
                             type: 'numeric',
                             numericFormat: {pattern: '0,0[00]'},
                             readOnly: true
@@ -97,10 +99,13 @@
                     error: '조회에 실패하였습니다.'
                 },
                 postData: {
-                    trade_type: 'SALES',
-                    member_code: '0001',
-                    with_balance: true,
-                    customer_type1: null,
+                    sales_day: this.getFormatTime(this.salesDay),
+                    customer_code: this.customerCode,
+                    member_code: this.memberCode,
+                    warehouse_code: this.warehouseCode,
+                    history: (this.isDup) ? true : null,
+                    deleted: false,
+                    product_type1: null,
                     keyword: '',
                     offset: 0,
                     max: 25
@@ -108,14 +113,25 @@
             }
         },
         computed: {
-          getPostData () {
-              this.postData.customer_type1 = this.$refs['customer-type'].value
-              return this.postData
-          }
+            getPostData () {
+                //this.postData.customer_type1 = this.$refs['customer-type'].value
+                return this.postData
+            },
+            getPopName () {
+                return (this.isDup) ? '납품분조회' : '상품조회'
+            }
         },
         methods: {
             fnProdClick (row) {
-                this.$emit('get-data', row)
+                this.$emit('get-data', [row])
+            },
+            fnProdChkClick (arr) {
+                if (!arr.length) {
+                    this.showCommonAlert('상품을 1개이상 선택해주세요.')
+                    return
+                }
+
+                this.$emit('get-data', arr)
             },
             fnGetData () {
                 // 조회상태 초기화
@@ -143,17 +159,18 @@
                 })
 
                 const postData = this.getPostData
-                customer.fetch(postData).then((data) => {
+                goods.fetch(postData).then((data) => {
+                    console.log("#################### 상품정보 조회 ###################", data)
+
                     let resCnt = data.list.length
                     if (resCnt <= 0) {
                         this.fetchState = 'noResults'
                         this.$toasted.show(this.fetchText.noResults)
                     } else {
-                        const getAgentMemberList = this.$store.state.AGENT_MEMBER_LIST
-                        data.list.forEach((e, i)=>{
-                          e.MEMBER_NAME = _get(_find(getAgentMemberList, { value: e.MEMBER_CODE }), 'name')
+                        // CHECKED FALSE PROP ADD
+                        data.list.forEach((e, i) => {
+                            e.CHECKED = false
                         })
-
                         this.hotOptions.data = this.hotOptions.data.concat(data.list)
                         this.postData.offset = postData.offset + postData.max
                         if (resCnt < postData.max) {
@@ -176,6 +193,14 @@
                     loader.hide()
                     this.getErrorMsg(err)
                 })
+            },
+            doClickComp () {
+                // 선택 상품 추가
+                this.$refs.chkListTable.doChkComp()
+            },
+            doCheckAll () {
+                // 상품 전체 선택
+                this.$refs.chkListTable.doChkAll()
             }
         },
         mounted () {
@@ -189,6 +214,7 @@
 
 <style scoped>
     #loader-container {
-        max-height: 400px;
+        height: 400px;
+        overflow: auto;
     }
 </style>

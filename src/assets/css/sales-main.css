@@ -1,0 +1,139 @@
+html, body {height: 100%}
+
+.btn {
+    vertical-align: top;
+}
+
+.b1 {
+    background: #EEE;
+    font-weight: bold;
+    text-align: center;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+.bc_view, .bc_view_after, .bc_credit {
+    font-size: 1.4em;
+    color: red;
+}
+
+.scr-area { overflow-x:hidden; overflow-y:scroll; border:1px solid #ddd; position: relative; }
+.sch-item { display:inline-block; margin-left:10px; }
+
+#wrapper {
+    width: 100%;
+}
+
+#wrapper #page-wrapper {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    min-width: 1400px;
+}
+
+#wrapper #page-wrapper > .panel {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#wrapper #entry-panel {
+    position: relative;
+    padding: 5px;
+}
+
+#wrapper #entry-panel .handsontable button.btn-del {
+    border: 0;
+    background: #888;
+    color: #fff;
+    margin: 0 auto;
+    padding: 2px;
+    display: block;
+    width: 100%;
+    font-size: 1.1rem;
+    line-height: 1.2rem;
+}
+
+#wrapper #entry-panel #handle {
+    background-color: transparent;
+    border-bottom: 2px solid #ddd;
+    width: 100%;
+    height: 5px;
+    cursor: row-resize;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+#wrapper #entry-panel table.slim {
+    margin-bottom: 0;
+}
+
+#wrapper #entry-panel table.slim > tbody > tr > th,
+#wrapper #entry-panel table.slim > tbody > tr > td {
+    padding: 3px 6px;
+}
+
+#wrapper #entry-panel #mod-area {
+    display: none;
+}
+
+#wrapper #list-panel { flex-grow: 1; overflow:auto; }
+#wrapper #list-panel #list-body { transition: height .3s; }
+#wrapper #list-panel #list-body .table>tbody>tr>td { padding: 1px 8px; }
+#wrapper #list-panel #list-body .list-area .list-item:hover { cursor:pointer; background-color:#f9f9f9; }
+#wrapper #list-panel #list-body .list-area .list-item.on { font-weight:bold; background-color:#ffdfdf; }
+#wrapper #list-panel .row>div { padding-left: 5px; padding-right: 5px; }
+#wrapper #list-panel #re-print { transform: scale(1.5); margin-right: 5px; vertical-align: middle; }
+#wrapper #list-panel #sum-table { margin-bottom:0; }
+#wrapper #list-panel .table > thead > tr > th { padding: 3px 8px; }
+#wrapper #list-panel .table > tbody > tr > td,
+#wrapper #list-panel .table > tbody > tr > th {
+    padding: 1px 8px;
+}
+
+#wrapper #list-panel .table > tbody > tr > td .print-all {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+#wrapper #list-panel .table > tbody > tr > td .print-all label {
+    padding-top: 4px;
+}
+
+.handsontable td.htViewRow .btn-view,
+#entry_panel .total-view .hover-area {
+    background-color: #BBB;
+    padding: 0 5px;
+    color: #FFF;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: block;
+    margin: 2px auto;
+    text-align: center;
+    position:relative;
+    z-index:2;
+}
+#entry_panel .total-view .txt-box { position:absolute; top:0; left:0; width:100%; z-index:1; padding-right:8px; }
+
+.handsontable td.htViewRow .btn-view.on { text-align:right; }
+.handsontable td.htViewRow .btn-view:hover { background-color: #777; }
+.handsontable td.htViewRow .btn-view.m {background-color:#f05d5d;}
+.handsontable td.htViewRow .btn-view.m:hover { background-color: #b93d3d; }
+
+.profitLayer {
+    position:fixed;top:0;left:0;display:none;width:150px;height:85px;background:#000;opacity:0.9;color:#fff;
+    border-radius:5px;z-index:98;text-align:center;padding:5px;
+}
+.profitLayer td { width:100%; }
+
+/**
+    원장조회 영역
+ */
+#ledger-body { overflow-y:auto; transition: height .3s; }
+#ledger-body .tit-area table thead th { text-align: right; }
+#ledger-body .scr-area table tbody td { text-align: right; padding:2px; }
+#ledger-body .scr-area .list-item:hover { cursor:pointer; background-color:#f9f9f9; }

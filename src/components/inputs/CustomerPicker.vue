@@ -1,77 +1,72 @@
 <template>
-  <div class="box">
-    <label>거래처 : </label>
-    <input type="text" name="CUSTOMER_NAME" class="form-control d-inline-block input-80" value=""
-           @keyup.enter="fnChkSearch" @click="fnChkSearch"
-           readonly="true">
-    <button type="button" class="btn btn-success ml5" @click="fnChkSearch">거래처</button>
+    <div class="box" :class="wrapClasses">
+        <label :class="labelClasses">{{ label?label:'거래처' }} : </label>
+        <input type="text" name="CUSTOMER_NAME" class="form-control d-inline-block input-100" v-model="getName"
+               @keyup.enter="fnChkSearch" @click="fnChkSearch" readonly="true">
+        <button type="button" class="btn btn-success ml5" @click="fnChkSearch">검색</button>
 
-    <modal name="pop-customers"
-           width="800"
-           height="auto"
-           :scrollable="true"
-           :clickToClose="false">
-      <PopCustomers @getdata="cbAddCustomers">
-        <div slot="footer" class="text-right">
-          <button class="btn btn-primary"
-                  @click="$modal.hide('pop-customers')">닫기</button>
-        </div>
-      </PopCustomers>
-    </modal>
-  </div>
+        <b-modal :id="defPopName"
+                 :lazy="true"
+                 size="lg"
+                 body-class="p-0"
+                 hide-footer
+                 hide-header>
+            <PopCustomers @get-data="cbAddCustomers">
+                <div slot="footer" class="text-right">
+                    <button class="btn btn-primary"
+                            @click="$root.$emit('bv::hide::modal',`${defPopName}`)">닫기
+                    </button>
+                </div>
+            </PopCustomers>
+        </b-modal>
+
+    </div>
 </template>
 
 <script>
-  import Vue from 'vue'
-  import VModal from 'vue-js-modal'
-  // 거래처 검색 팝업
-  import PopCustomers from '../popup/PopCustomers.vue'
+    // 거래처 검색 팝업
+    import PopCustomers from '../popup/PopCustomers.vue'
 
-  // 뷰모달 컴포넌트 동적 사용 설정
-  Vue.use(VModal, {dynamic: true})
+    export default {
+        name: "CustomerPicker",
+        props: {
+            label: String,
+            model: Object,
+            labelClasses: String,
+            wrapClasses: String
+        },
+        components: {
+            PopCustomers
+        },
+        computed: {
+            getName () {
+                return this.model.CUSTOMER_NAME
+            }
+        },
+        data () {
+            return {
+                defPopName: 'pop-customers-' + this._uid
+            }
+        },
+        methods: {
+            fnChkSearch () {
+                this.$root.$emit('bv::show::modal',`${this.defPopName}`)
+            },
+            /**
+             * 거래처 팝업에서 선택된 정보를 hansOnTable 에 row 추가
+             */
+            cbAddCustomers (data) {
+                if (!data.BANK_INFO) {
+                    data.BANK_INFO = null
+                }
+                Object.assign(this.model, data)
 
-  export default {
-    name: "CustomerPicker",
-    components: {
-      PopCustomers
-    },
-    props:['hot'],
-    data() {
-      return {
+                // 거래처물품 팝업 숨김
+                this.$root.$emit('bv::hide::modal',`${this.defPopName}`)
+            }
 
-      }
-    },
-    methods: {
-      fnChkSearch () {
-        this.$modal.show('pop-customers')
-      },
-      /**
-       * 거래처 팝업에서 선택된 정보를 hansOnTable 에 row 추가
-       */
-      cbAddCustomers: function (data) {
-        // 빈줄을 제거
-        if (hot.getSettings().minSpareRows > 0 && hot.countRows() > 0) {
-          hot.getSourceData().pop()
         }
-        hot.getSourceData().push(customerOrderItem)
-        hot.loadData(hot.getSourceData())
-        // hot.render()
-
-        // 거래처물품 팝업 숨김
-        this.$modal.hide('pop-customers')
-
-        this.$nextTick(() => {
-          // 셀 스타일 적용
-          this.checkRow()
-          // 수량입력 cell 로 이동
-          hot.selectCell(this.fnGetHandsOnTableActualRowCount() - 1, hot.propToCol('amount'))
-          // console.log(hot.getSourceData())
-          // console.log(this.model.customerOrderItemList)
-        })
-      }
-
     }
-  }
 </script>
 
 <style scoped>

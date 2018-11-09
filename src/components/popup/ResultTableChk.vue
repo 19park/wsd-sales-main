@@ -8,14 +8,16 @@
     import Handsontable from 'handsontable-pro'
 
     export default {
-        name: "ResultTable",
+        name: "ResultTableChk",
         props: {
             hotId: String,
             hotOptions: Object
         },
         data () {
             return {
-                hot: null
+                hot: null,
+                isAllChk: false,
+                checkedArr: []
             }
         },
         computed: {
@@ -61,15 +63,28 @@
                         this.doSelect(this.getSelectRow)
                     } else if (e.keyCode === 38) {
                         // 위 방향키
-                        if(this.getSelectRow === 0) e.stopImmediatePropagation()
+                        if (this.getSelectRow === 0) e.stopImmediatePropagation()
                     } else if (e.keyCode === 40) {
                         // 아래 방향키
-                        if(this.getSelectRow+1 === this.hot.countRows()) e.stopImmediatePropagation()
+                        if (this.getSelectRow + 1 === this.hot.countRows()) e.stopImmediatePropagation()
                     }
                 },
-                afterOnCellMouseDown: (e, coords) => {
+                afterOnCellMouseDown: (e, coords, TD) => {
                     // 마우스 클릭
                     e.stopImmediatePropagation()
+
+                    if (coords.col === 0) {
+                        if (!this.hot.getDataAtRowProp(coords.row, 'CHECKED')) {
+                            // 체크 했을 경우
+                            this.checkedArr.push(coords.row)
+                        } else {
+                            // 체크 해제 할 경우
+                            const getIdx = this.checkedArr.indexOf(coords.row)
+                            this.checkedArr.splice(getIdx, 1)
+                        }
+                        this.hot.deselectCell()
+                        return false
+                    }
                     this.doSelect(coords.row)
                 },
                 afterScrollVertically: () => {
@@ -89,6 +104,29 @@
                 if (!this.hot.countRows()) return false
                 const getData = this.hot.getSourceDataAtRow(row)
                 this.$emit('rowClick', getData)
+            },
+            doChkComp () {
+                // let getChkData = []
+                // this.checkedArr.forEach((e)=>{
+                //     getChkData.push(this.hot.getSourceDataAtRow(e))
+                // })
+                // // 중복 제거?
+                // getChkData = _uniq(getChkData)
+                const getData = this.hot.getSourceData()
+                const getChkData = getData.filter((e) => e.CHECKED === true)
+
+                this.$emit('chkClick', getChkData)
+            },
+
+            doChkAll () {
+                const getData = this.hot.getSourceData()
+                if (!this.isAllChk) {
+                    this.isAllChk = true
+                    getData.forEach((e) => e.CHECKED = true)
+                } else {
+                    this.isAllChk = false
+                    getData.forEach((e) => e.CHECKED = false)
+                }
             }
         }
     }

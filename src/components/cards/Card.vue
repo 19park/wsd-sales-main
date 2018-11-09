@@ -27,5 +27,6 @@
     }
   }
 </script>
-<style>
+<style scoped>
+  .card-title { font-size:1.7rem; margin-bottom:0; vertical-align: middle; }
 </style>

@@ -3,55 +3,86 @@
   <head>
     <meta charset="utf-8">
     <title>wsd-sales-main</title>
-    <link rel="stylesheet" href="/dist/main.css">
+    <link rel="stylesheet" href="./dist/main.css">
   </head>
   <body>
     <div id="app"></div>
 
 
     <script type="text/javascript">
-      // 로그인 저장쿠키
-      localStorage.setItem('SAVE_AGENTNO', '9999990003')
+      if(localStorage){
+          // 로그인 저장쿠키
+          localStorage.setItem('SAVE_AGENTNO', '9999990003')
 
-      // 기본 쿠기생성
-      localStorage.setItem('SMJT_SMJTUSER', 'SMJT_USER')
-      localStorage.setItem('USER_ID', 'guest03')
-      localStorage.setItem('USER_CODE', '0003')
-      localStorage.setItem('USER_NAME', '게스트')
-      localStorage.setItem('USER_AGENTRNO', '60')
-      localStorage.setItem('USER_AGENTNO', '9999990003')
-      localStorage.setItem('USER_AGENTNAME', '대박유통')
-      localStorage.setItem('USER_M_AGENTNO', '9999990003')
-      localStorage.setItem('USER_M_ADMIN', '1')
-      localStorage.setItem('USER_MMDIV', '1')
+          // 기본 쿠기생성
+          localStorage.setItem('SMJT_SMJTUSER', 'SMJT_USER')
+          localStorage.setItem('USER_ID', 'guest03')
+          localStorage.setItem('USER_CODE', '0003')
+          localStorage.setItem('USER_NAME', '게스트')
+          localStorage.setItem('USER_AGENTRNO', '60')
+          localStorage.setItem('USER_AGENTNO', '9999990003')
+          localStorage.setItem('USER_AGENTNAME', '대박유통')
+          localStorage.setItem('USER_M_AGENTNO', '9999990003')
+          localStorage.setItem('USER_M_ADMIN', '1')
+          localStorage.setItem('USER_MMDIV', '1')
 
-      // 권한쿠키
-      localStorage.setItem('USER_AUTH1', 'Y')
-      localStorage.setItem('USER_AUTH2', 'Y')
-      localStorage.setItem('USER_AUTH3', 'Y')
-      localStorage.setItem('USER_AUTH_REPROCESS', 'Y')
-      localStorage.setItem('USER_SYSDIV', 'Y')
+          // 권한쿠키
+          localStorage.setItem('USER_AUTH1', 'YYY') // 사용자권한
+          localStorage.setItem('USER_AUTH2', 'YYYYYYYYYYY') // 메뉴권한
+          localStorage.setItem('USER_AUTH3', 'YYYYYYY') // 운영권한
 
-      // 쇼핑몰여부
-      localStorage.setItem('USER_SHOPDIV', 'Y')
+          localStorage.setItem('USER_AUTH1_1', 'Y') // 저장
+          localStorage.setItem('USER_AUTH1_2', 'Y') // 수정
+          localStorage.setItem('USER_AUTH1_3', 'Y') // 삭제
 
-      // 계란업체
-      localStorage.setItem('USER_EGGDIV', 'Y')
+          localStorage.setItem('USER_AUTH2_1', 'Y') // 매출관리
+          localStorage.setItem('USER_AUTH2_2', 'Y') // 매입관리
+          localStorage.setItem('USER_AUTH2_3', 'Y') // 재고관리
+          localStorage.setItem('USER_AUTH2_4', 'Y') // 계산서관리
+          localStorage.setItem('USER_AUTH2_5', 'Y') // 지출관리
+          localStorage.setItem('USER_AUTH2_6', 'Y') // 장비관리
+          localStorage.setItem('USER_AUTH2_7', 'Y') // 정보현황
+          localStorage.setItem('USER_AUTH2_8', 'Y') // 거래처등록
+          localStorage.setItem('USER_AUTH2_9', 'Y') // 품목등록
+          localStorage.setItem('USER_AUTH2_10', 'Y') // 환경설정
+          localStorage.setItem('USER_AUTH2_11', 'Y') // 쇼핑몰설정
 
-      // 단가소수점구분
-      localStorage.setItem('USER_POINTDIV', 'Y')
-      localStorage.setItem('USER_APOINTDIV', 'Y')
+          localStorage.setItem('USER_AUTH3_1', 'Y') // 전체거래처
+          localStorage.setItem('USER_AUTH3_2', 'Y') // 실적전체
+          localStorage.setItem('USER_AUTH3_3', 'Y') // 날짜변경_전일
+          localStorage.setItem('USER_AUTH3_4', 'Y') // 날짜변경_후일
+          localStorage.setItem('USER_AUTH3_5', 'Y') // 단가수정
+          localStorage.setItem('USER_AUTH3_6', 'Y') // 잔고수정
+          localStorage.setItem('USER_AUTH3_7', 'Y') // 재고수정
 
-      // 수량구분
-      localStorage.setItem('USER_AMTDIV', '2')
+          localStorage.setItem('USER_AUTH_REPROCESS', 'Y') // 재가공관리 사용
+          localStorage.setItem('USER_SYSDIV', 'Y') // 시스템관리자
 
-      // 소매거래구분 160329
-      localStorage.setItem('USER_RETAILDIV', 'Y')
+          // 쇼핑몰여부
+          localStorage.setItem('USER_SHOPDIV', 'Y')
 
-      // 2017.08.22 광동대리점구분 추가
-      localStorage.setItem('USER_CONNECTDIV', 'Y')
+          // 계란업체
+          localStorage.setItem('USER_EGGDIV', 'Y')
 
+          // 단가소수점 구분
+          localStorage.setItem('USER_POINTDIV', 'Y')
+
+          // 수량소수점 구분
+          localStorage.setItem('USER_APOINTDIV', 'Y')
+
+          // 수량구분
+          localStorage.setItem('USER_AMTDIV', '2')
+          localStorage.setItem('USER_DCDIV', '0')
+          localStorage.setItem('USER_SERDIV', '0')
+          localStorage.setItem('USER_CMTDIV', '0')
+
+          // 소매거래구분 2016.03.29
+          localStorage.setItem('USER_RETAILDIV', 'Y')
+
+          // 2017.08.22 광동대리점구분 추가
+          localStorage.setItem('USER_CONNECTDIV', 'Y')
+      }
     </script>
-    <script src="/dist/build.js"></script>
+    <script src="./dist/build.js"></script>
   </body>
 </html>

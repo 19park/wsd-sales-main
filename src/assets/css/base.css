@@ -1,68 +1,415 @@
 @import url(../fonts/noto_font_kr.css);
 
 /*! 브라우저 스타일 동기화 스타일 */
-article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}
-audio,canvas,video{display:inline-block;*display:inline;*zoom:1}
-audio:not([controls]){display:none;height:0}
-[hidden]{display:none}
-html{font-size:90%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-body{ font-family: 'Noto Sans', Helvetica, Arial, sans-serif, Verdana; background:#fff; }
-body,figure,form{margin:0}
+article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, section, summary {
+    display: block
+}
+
+audio, canvas, video {
+    display: inline-block;
+    *display: inline;
+    *zoom: 1
+}
+
+audio:not([controls]) {
+    display: none;
+    height: 0
+}
+
+[hidden] {
+    display: none
+}
+
+html {
+    font-size: 80%;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%
+}
+
+body {
+    font-family: 'Noto Sans', Helvetica, Arial, sans-serif, Verdana;
+    background: #fff;
+}
+
+body, figure, form {
+    margin: 0
+}
+
 /*a:focus{outline:thin dotted}
 a:active,a:hover{outline:0}*/
-h1{font-size:2em;margin:.67em 0}
-h2{font-size:1.5em;margin:.83em 0}
-h3{font-size:1.17em;margin:1em 0}
-h4{font-size:1em;margin:1.33em 0}
-h5{font-size:.83em;margin:1.67em 0}
-h6{font-size:.67em;margin:2.33em 0}
-abbr[title]{cursor:help;border-bottom:1px dotted}
-b,strong{font-weight:bold}
-blockquote{margin:1em 40px}
-dfn{font-style:italic}
-hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}
-mark{background:#ff0;color:#000}
-p,pre{margin:0}
-code,kbd,pre,samp{font-family:monospace,serif;_font-family:'courier new',monospace;font-size:1em}
-pre{white-space:pre;white-space:pre-wrap;word-wrap:break-word}
-q{quotes:none}
-q:before,q:after{content:'';content:none}
-small{font-size:80%}
-sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}
-sup{top:-0.5em}
-sub{bottom:-0.25em}
-dl,menu,ol,ul{margin:1em 0}
-dd{margin:0 0 0 40px}
-menu,ol,ul{padding:0 0 0 40px}
-nav ul,nav ol{list-style:none;list-style-image:none;margin:0;padding:0}
-img, a img{border:0;-ms-interpolation-mode:bicubic}
-svg:not(:root){overflow:hidden}
-fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}
-legend{border:0;padding:0;white-space:normal;*margin-left:-7px}
-button,input,select,textarea{font-size:100%;margin:0;vertical-align:baseline;*vertical-align:middle}
-button,input{line-height:normal}button,select{text-transform:none}
-button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer;*overflow:visible}
-button[disabled],html input[disabled]{cursor:default}
-input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0;*height:13px;*width:13px}
-input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}
-input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}
-button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}
-button{border:0 none;padding:0;margin:0;background:transparent;*overflow:visible;cursor:pointer;outline: none}
-button::-moz-focus-inner {border:0;padding:0}
-textarea{overflow:auto;vertical-align:top}
-table{border-collapse: collapse; border-spacing: 0; }
+h1 {
+    font-size: 2em;
+    margin: .67em 0
+}
 
-img{border:0;vertical-align:top;max-width:100%; font-size:0; line-height:0;}
-h1, h2, h3, h4{margin:0; padding:0;}
-a{text-decoration:none; display:block; color:#323232;}
-a:hover, a:active {text-decoration: none;}
+h2 {
+    font-size: 1.5em;
+    margin: .83em 0
+}
 
-ul{margin:0; padding:0;}
-li{list-style:none;}
+h3 {
+    font-size: 1.17em;
+    margin: 1em 0
+}
 
-::-moz-selection{background:#ffbcbc;text-shadow:none}
-::selection{background:#ffbcbc;text-shadow:none}
+h4 {
+    font-size: 1em;
+    margin: 1.33em 0
+}
 
+h5 {
+    font-size: .83em;
+    margin: 1.67em 0
+}
 
+h6 {
+    font-size: .67em;
+    margin: 2.33em 0
+}
 
-.cursor { cursor: pointer; }
+abbr[title] {
+    cursor: help;
+    border-bottom: 1px dotted
+}
+
+b, strong {
+    font-weight: bold
+}
+
+blockquote {
+    margin: 1em 40px
+}
+
+dfn {
+    font-style: italic
+}
+
+hr {
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    height: 0
+}
+
+mark {
+    background: #ff0;
+    color: #000
+}
+
+p, pre {
+    margin: 0
+}
+
+code, kbd, pre, samp {
+    font-family: monospace, serif;
+    _font-family: 'courier new', monospace;
+    font-size: 1em
+}
+
+pre {
+    white-space: pre;
+    white-space: pre-wrap;
+    word-wrap: break-word
+}
+
+q {
+    quotes: none
+}
+
+q:before, q:after {
+    content: '';
+    content: none
+}
+
+small {
+    font-size: 80%
+}
+
+sub, sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline
+}
+
+sup {
+    top: -0.5em
+}
+
+sub {
+    bottom: -0.25em
+}
+
+dl, menu, ol, ul {
+    margin: 1em 0
+}
+
+dd {
+    margin: 0 0 0 40px
+}
+
+menu, ol, ul {
+    padding: 0 0 0 40px
+}
+
+nav ul, nav ol {
+    list-style: none;
+    list-style-image: none;
+    margin: 0;
+    padding: 0
+}
+
+img, a img {
+    border: 0;
+    -ms-interpolation-mode: bicubic
+}
+
+svg:not(:root) {
+    overflow: hidden
+}
+
+fieldset {
+    border: 1px solid silver;
+    margin: 0 2px;
+    padding: .35em .625em .75em
+}
+
+legend {
+    border: 0;
+    padding: 0;
+    white-space: normal;
+    *margin-left: -7px
+}
+
+button, input, select, textarea {
+    font-size: 100%;
+    margin: 0;
+    vertical-align: baseline;
+    *vertical-align: middle
+}
+
+button, input {
+    line-height: normal
+}
+
+button, select {
+    text-transform: none
+}
+
+button, html input[type="button"], input[type="reset"], input[type="submit"] {
+    -webkit-appearance: button;
+    cursor: pointer;
+    *overflow: visible
+}
+
+button[disabled], html input[disabled] {
+    cursor: default
+}
+
+input[type="checkbox"], input[type="radio"] {
+    box-sizing: border-box;
+    padding: 0;
+    *height: 13px;
+    *width: 13px
+}
+
+input[type="search"] {
+    -webkit-appearance: textfield;
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box
+}
+
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none
+}
+
+button::-moz-focus-inner, input::-moz-focus-inner {
+    border: 0;
+    padding: 0
+}
+
+button {
+    border: 0 none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    *overflow: visible;
+    cursor: pointer;
+    outline: none
+}
+
+button::-moz-focus-inner {
+    border: 0;
+    padding: 0
+}
+
+textarea {
+    overflow: auto;
+    vertical-align: top
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+img {
+    border: 0;
+    vertical-align: top;
+    max-width: 100%;
+    font-size: 0;
+    line-height: 0;
+}
+
+h1, h2, h3, h4 {
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    text-decoration: none;
+    display: block;
+    color: #323232;
+}
+
+a:hover, a:active {
+    text-decoration: none;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    list-style: none;
+}
+
+::-moz-selection {
+    background: #ffbcbc;
+    text-shadow: none
+}
+
+::selection {
+    background: #ffbcbc;
+    text-shadow: none
+}
+
+.btn-add {
+    color: #fff;
+    background-color: #00af75;
+    border-color: #007951;
+}
+
+.btn-add:hover, .btn-add:focus, .btn-add.focus,
+.btn-add:active, .btn-add.active, .open > .dropdown-toggle.btn-add {
+    color: #fff;
+    background-color: #007951;
+}
+
+.btn-excel {
+    color: #fff;
+    background-color: #ed6663;
+}
+
+.btn-excel:hover, .btn-excel:focus, .btn-excel.focus,
+.btn-excel:active, .btn-excel.active, .open > .dropdown-toggle.btn-excel {
+    color: #fff;
+    background-color: #d23a37;
+}
+
+.btn-print {
+    color: #fff;
+    background-color: #ed6663;
+}
+
+.btn-print:hover, .btn-print:focus, .btn-print.focus,
+.btn-print:active, .btn-print.active, .open > .dropdown-toggle.btn-print {
+    color: #fff;
+    background-color: #d23a37;
+}
+
+.btn-search {
+    color: #fff;
+    background-color: #f79d32;
+}
+
+.btn-search:hover, .btn-search:focus, .btn-search.focus,
+.btn-search:active, .btn-search.active, .open > .dropdown-toggle.btn-search {
+    color: #fff;
+    background-color: #f78907;
+}
+
+.btn-black {
+    color: #fff;
+    background-color: #444;
+    border-color: rgba(0, 0, 0, 0.2)
+}
+
+.btn-black:hover, .btn-black:focus, .btn-black:active, .btn-black.active, .open > .dropdown-toggle.btn-black {
+    color: #fff;
+    background-color: #2b2b2b;
+    border-color: rgba(0, 0, 0, 0.2)
+}
+
+.btn-black:active, .btn-black.active, .open > .dropdown-toggle.btn-black {
+    background-image: none
+}
+
+.btn-black.disabled, .btn-black[disabled], fieldset[disabled] .btn-black, .btn-black.disabled:hover, .btn-black[disabled]:hover, fieldset[disabled] .btn-black:hover, .btn-black.disabled:focus, .btn-black[disabled]:focus, fieldset[disabled] .btn-black:focus, .btn-black.disabled:active, .btn-black[disabled]:active, fieldset[disabled] .btn-black:active, .btn-black.disabled.active, .btn-black[disabled].active, fieldset[disabled] .btn-black.active {
+    background-color: #444;
+    border-color: rgba(0, 0, 0, 0.2)
+}
+
+.btn-black .badge {
+    color: #444;
+    background-color: #fff
+}
+
+.cursor {
+    cursor: pointer;
+}
+
+.input-80 {
+    width: 80px;
+}
+
+.input-90 {
+    width: 90px;
+}
+
+.input-100 {
+    width: 100px;
+}
+
+.input-110 {
+    width: 110px;
+}
+
+.input-120 {
+    width: 120px;
+}
+
+.input-150 {
+    width: 150px;
+}
+
+.input-200 {
+    width: 200px;
+}
+
+.input-250 {
+    width: 250px;
+}
+
+.input-300 {
+    width: 300px;
+}
+
+.elip {
+    overflow: hidden;
+    -ms-text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
