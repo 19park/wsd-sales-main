@@ -438,12 +438,10 @@
                 window.addEventListener('mouseup', this.stopResizing, false)
             },
             startResizing (e) {
-                // let getTableHeight = document.getElementById('hot-wrap').style.height
-                // this.hot.updateSettings({
-                //     height: getTableHeight
-                // })
+                // do event
             },
             stopResizing () {
+                window.dispatchEvent(new Event('resize'))
                 window.removeEventListener('mousemove', this.startResizing, false)
                 window.removeEventListener('mouseup', this.stopResizing, false)
             },
@@ -639,7 +637,12 @@
                 }))
             },
 
-            // HOT의 fix bottom row 뷰처리
+            /**
+             * TODO ANDSONTABLE의 FIX BOTTOM ROW 버그
+             * 셀 콘텐츠의 높이가 전체 부모의 높이보다 적을경우,
+             * FIX BOTTOM에 해당하는 ROW가 중복으로 노출 됨.
+             * 당장은 높이 계산에 따라서 숨김&보임 처리 함.
+             */
             doFixRowRenderer () {
                 // 현재 HOT의 높이
                 const GET_TABLE = this.node.table
