@@ -12,7 +12,6 @@ const Common = {
         }
     },
     methods: {
-
         /**
          * 오늘날짜 date 타입으로 그대로 return
          */

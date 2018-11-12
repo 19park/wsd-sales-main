@@ -8,7 +8,7 @@
                 </div>
             </div>
 
-            <div id="list-panel">
+            <div id="list-panel" ref="list-panel">
                 <b-container flude class="mw-100">
                     <b-row>
                         <b-col cols="8">

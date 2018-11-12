@@ -1,11 +1,15 @@
 <template>
     <b-card no-body>
-        <b-card-header class="d-flex justify-content-between" id="list-header">
+        <b-card-header class="d-flex justify-content-between" id="list-header" ref="list-header">
             <div class="box">
                 <div class="d-inline-block">
-                    <DatePicker id="salesDay"
-                                :value="model.startDay"
-                                label="기간"
+                    <DatePicker id="startDay"
+                                label="기간 :"
+                                :model="model"
+                                wrap-classes="d-inline-block"/>
+                    <span class="ml-1">~</span>
+                    <DatePicker id="endDay"
+                                :model="model"
                                 wrap-classes="d-inline-block"/>
 
                     <CustomerPicker :model="model.customer"
@@ -18,7 +22,7 @@
                 </div>
             </div>
         </b-card-header>
-        <b-card-body id="list-body" class="p-0">
+        <b-card-body id="list-body" ref="list-body" class="p-0">
             <div class="d-flex flex-column h-100">
                 <div class="tit-area">
                     <table class="table table-bordered mb-0"
@@ -73,9 +77,10 @@
                         </colgroup>
                         <tbody class="list-area" id="list-wrap">
                         <tr align="center"
-                            class="list-item cursor"
                             v-for="item in listModel.data"
-                            @click="getLoadData(item)">
+                            class="list-item cursor"
+                            :class="{ on: chkMatchListState(item) }"
+                            @click="getLoadData($event, item)">
                             <!-- TODO 복사저장 트레킹 fn_trk('B003') //-->
                             <td>
                                 <a href="javascript:void(0)"
@@ -84,7 +89,7 @@
                             </td>
                             <td align="left" class="elip">
                                 {{
-                                    `${getFormatTime(item.SALES_DAY)} ${getFormatDate('LT', item.REG_DATE)}`
+                                `${getFormatTime(item.SALES_DAY)} ${getFormatDate('LT', item.REG_DATE)}`
                                 }}
                             </td>
                             <td>{{item.SALES_CODE}}</td>
@@ -131,7 +136,7 @@
                 </div>
             </div>
         </b-card-body>
-        <b-card-footer id="list-footer">
+        <b-card-footer id="list-footer" ref="list-footer">
             <div class="d-flex justify-content-between">
                 <div class="d-inline-block">Total : <span class="tot-print">0</span></div>
                 <paginate v-model="listModel.page"
@@ -148,8 +153,8 @@
                 </paginate>
                 <div class="float-right d-flex align-items-center">
                     <!--<span class="mr-3">-->
-                        <!--<input type="checkbox" value="Y" id="re-print">-->
-                        <!--<label for="re-print">재발행포함</label>-->
+                    <!--<input type="checkbox" value="Y" id="re-print">-->
+                    <!--<label for="re-print">재발행포함</label>-->
                     <!--</span>-->
                     <button type="button" class="btn btn-print mr-1"
                             @click="$('#popPrintAll').modal('show')">명세서일괄인쇄
@@ -171,6 +176,7 @@
     import Common from './mixin/common'
     import numeral from 'numeral'
     import _merge from 'lodash/merge'
+    import _match from 'lodash/isMatch'
 
     // 조건조회 관련
     import CustomerPicker from "./inputs/CustomerPicker.vue"
@@ -202,6 +208,11 @@
                         code: null
                     }
                 },
+                listState: {
+                    SALES_CODE: null,
+                    SALES_DAY: null,
+                    CUSTOMER_CODE: null
+                },
                 listModel: {
                     page: 1,
                     total: 1,
@@ -231,10 +242,10 @@
             }
         },
         mounted () {
-            this.node.root = document.getElementById('list-panel')
-            this.node.header = document.getElementById('list-header')
-            this.node.footer = document.getElementById('list-footer')
-            this.node.body = document.getElementById('list-body')
+            this.node.root = this.$parent.$refs['list-panel']
+            this.node.header = this.$refs['list-header']
+            this.node.footer = this.$refs['list-footer']
+            this.node.body = this.$refs['list-body']
             this.node.bodyTitle = this.node.body.querySelector('.tit-area')
             this.node.bodyList = this.node.body.querySelector('.scr-area')
 
@@ -249,13 +260,15 @@
                 const getNode = this.node
                 const GET_ROOT_H = getNode.root.clientHeight
 
-                if(GET_ROOT_H < 300) { return false }
+                if (GET_ROOT_H < 300) {
+                    return false
+                }
                 const GET_HEADER_H = getNode.header.clientHeight
                 const GET_FOOTER_H = getNode.footer.clientHeight
                 const GET_TARGET = getNode.body
 
                 // 초기 높이 값 세팅
-                GET_TARGET.style.height = `${GET_ROOT_H-GET_HEADER_H-GET_FOOTER_H-20}px`
+                GET_TARGET.style.height = `${GET_ROOT_H - GET_HEADER_H - GET_FOOTER_H - 20}px`
 
                 const GET_SCROLL_ELEM = getNode.bodyList
                 const scrollBarWidth = GET_SCROLL_ELEM.offsetWidth - GET_SCROLL_ELEM.clientWidth;
@@ -275,7 +288,7 @@
                     end_day: this.getFormatTime(this.model.endDay),
                     customer_code: this.model.customer.CUSTOMER_CODE,
                     member_code: this.model.member.code,
-                    offset: (this.listModel.page-1)*this.listModel.max,
+                    offset: (this.listModel.page - 1) * this.listModel.max,
                     max: this.listModel.max
                 }
 
@@ -289,8 +302,8 @@
                 _merge(this.getSalesSummary, getSummary)
 
                 sales.fetch(postData).then((data) => {
-                    let getTotal = (data.total===0) ? 1 : data.total
-                    getTotal = getTotal/this.listModel.max
+                    let getTotal = (data.total === 0) ? 1 : data.total
+                    getTotal = getTotal / this.listModel.max
 
                     this.listModel.total = getTotal
                     this.listModel.data = data.list
@@ -306,6 +319,15 @@
 
                     this.$snotify.error('매출목록 조회 실패', this.parseErrorMsg(err))
                 })
+            },
+
+            chkMatchListState (item) {
+                const matchObj = {
+                    SALES_CODE: item.SALES_CODE,
+                    SALES_DAY: item.SALES_DAY,
+                    CUSTOMER_CODE: item.CUSTOMER_CODE
+                }
+                return _match(this.listState, matchObj)
             },
 
             // 매출 합계 추가 조회
@@ -328,7 +350,22 @@
              * 조회 된 매출목록의 ROW 클릭 시 원장 및 데이터 조회
              * @param obj
              */
-            getLoadData (obj) {
+            getLoadData (e, obj) {
+                let GET_ROW = e.target.parentNode
+                let GET_SIBLINGS = this.getSiblings(GET_ROW)
+
+                // 형제 ROW들의 on 클래스 제거
+                GET_SIBLINGS.forEach((e) => {
+                    e.classList.remove('on')
+                })
+                // 현재 ROW에 on 클래스 추가
+                GET_ROW.classList.add('on')
+
+                // 리스트 상태 값 저장 (페이지 이동 시)
+                this.listState.SALES_CODE = obj.SALES_CODE
+                this.listState.SALES_DAY = obj.SALES_DAY
+                this.listState.CUSTOMER_CODE = obj.CUSTOMER_CODE
+
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
                     customer_name: obj.CUSTOMER_NAME,
@@ -338,6 +375,10 @@
 
                 // 매출 원장 조회
                 this.$parent.$refs['sales-ledger'].getSalesLedger(postLedgerData)
+            },
+
+            getSiblings (n) {
+                return [...n.parentElement.children].filter(c => c != n)
             },
 
             goExcel () {

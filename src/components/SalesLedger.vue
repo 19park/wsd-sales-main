@@ -1,10 +1,10 @@
 <template>
     <b-card no-body>
-        <b-card-header id="ledger-header">
+        <b-card-header id="ledger-header" ref="ledger-header">
             <strong class="mr-3">원장</strong>
             <span>* 매출&매입 거래처는 최종 잔고만 표시됩니다.</span>
         </b-card-header>
-        <b-card-body id="ledger-body" class="p-0">
+        <b-card-body id="ledger-body" ref="ledger-body" class="p-0">
             <div class="d-flex flex-column h-100">
                 <div class="tit-area">
                     <table class="table table-bordered mb-0"
@@ -63,7 +63,7 @@
                 </div>
             </div>
         </b-card-body>
-        <b-card-footer id="ledger-footer">
+        <b-card-footer id="ledger-footer" ref="ledger-footer">
             <strong v-if="model.customer.name">
                 거래처명 : {{model.customer.name}}
             </strong>
@@ -102,10 +102,10 @@
             }
         },
         mounted () {
-            this.node.root = document.getElementById('list-panel')
-            this.node.header = document.getElementById('ledger-header')
-            this.node.footer = document.getElementById('ledger-footer')
-            this.node.body = document.getElementById('ledger-body')
+            this.node.root = this.$parent.$refs['list-panel']
+            this.node.header = this.$refs['ledger-header']
+            this.node.footer = this.$refs['ledger-footer']
+            this.node.body = this.$refs['ledger-body']
             this.node.bodyTitle = this.node.body.querySelector('.tit-area')
             this.node.bodyList = this.node.body.querySelector('.scr-area')
 

@@ -2,7 +2,8 @@ import axios from 'axios'
 import store from '../store'
 import _get from 'lodash/get'
 
-const DOMAIN = 'http://192.168.100.231:8080/wholedoc'
+// const DOMAIN = 'http://192.168.100.231:8080/wholedoc'
+const DOMAIN = 'https://wholedoc.net:8444/wholedoc'
 const API_KEY = 'wholeDoc1hb23jh45h3j3v339d0fk90s9d8fd9e'
 const WEB_TOKEN = 'WeB91F98eF7d3K2sdhKetnaD'
 const UNAUTHORIZED = 401

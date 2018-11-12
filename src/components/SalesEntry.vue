@@ -8,32 +8,34 @@
                     <!--<strong style="font-size:1.6em;letter-spacing: -0.025rem;">매출등록</strong>-->
                     <!--</th>-->
                     <td width="62%">
-                        <DatePicker id="salesDay"
-                                    :value="model.salesDay"
-                                    wrap-classes="d-inline-block"/>
+                    <DatePicker id="salesDay"
+                                label="매출일자 :"
+                                :model="model"
+                                :disableType="getDisableType"
+                                wrap-classes="d-inline-block"/>
 
-                        <CustomerPicker :model="model.customer"
-                                        wrap-classes="d-inline-block ml-2"/>
-                        <EmployeePicker :model="model.member"
-                                        ref="select-member"
-                                        :disabled="true"
-                                        wrap-classes="d-inline-block ml-2"/>
-                        <WarehousePicker :model="model.warehouse"
-                                         ref="select-warehouse"
-                                         wrap-classes="d-inline-block ml-2"
-                                         @nextAct="doGoodsSearch"/>
+                    <CustomerPicker :model="model.customer"
+                                    wrap-classes="d-inline-block ml-2"/>
+                    <EmployeePicker :model="model.member"
+                                    ref="select-member"
+                                    :disabled="true"
+                                    wrap-classes="d-inline-block ml-2"/>
+                    <WarehousePicker :model="model.warehouse"
+                                     ref="select-warehouse"
+                                     wrap-classes="d-inline-block ml-2"
+                                     @nextAct="doGoodsSearch"/>
 
-                        <!-- TODO 트레킹? //-->
-                        <button type="button" class="btn btn-success" @click="doGoodsSearch(true)">납품분
-                        </button>
-                    </td>
+                    <!-- TODO 트레킹? //-->
+                    <button type="button" class="btn btn-success" @click="doGoodsSearch(true)">납품분
+                    </button>
+                </td>
                     <th width="4%" class="b1">현잔고</th>
                     <td width="8%" align="right">
                         <span class="bc_view">{{getCustomerBc}}</span>
                     </td>
                     <th width="6%" class="b1">거래후잔고</th>
                     <td width="8%" align="right">
-                        <span class="bc_view_after">0</span>
+                        <span class="bc_view_after">{{getCustomerAfterBc}}</span>
                     </td>
                     <th width="4%" class="b1">여신</th>
                     <td width="8%" align="right">
@@ -211,6 +213,9 @@
             getStoreState () {
                 return this.$store.state
             },
+            getDisableType () {
+                return this.disableType
+            },
             getAmtNumericPattern () {
                 return (this.getStoreState.USE_POINT_AMT_DIV === 'Y') ? '0,0[00]' : '0,0'
             },
@@ -219,6 +224,9 @@
             },
             getCustomerBc () {
                 return numeral(this.model.customer.CUSTOMER_BC.NOW_BC).format()
+            },
+            getCustomerAfterBc () {
+                return numeral(this.model.customer.CUSTOMER_BC.NOW_BC + this.model.salesTotalPrice).format()
             },
             getCustomerCreditBc () {
                 return numeral(this.model.customer.CREDIT_BC).format()
@@ -236,6 +244,8 @@
                 arrHiddenCols: [],
                 // 상품,납품분 조회구분
                 isGoodsPopDup: false,
+                // 매출일자 일자 렌더링구분
+                disableType: '',
                 model: {
                     salesDay: this.getFullCurrentDate(),
                     customer: {
@@ -274,6 +284,7 @@
                             total: 0
                         }
                     },
+                    salesTotalPrice: 0, // 작성중인 화면의 누적 합계금액
                     salesMainItemList: []
                 },
                 hotOptions: {
@@ -324,7 +335,8 @@
                     ],
                     columns: [
                         // bind mounted
-                    ]
+                    ],
+                    salesDivOption: ['매출', '정상반품']
                 },
                 node: {
                     table: null
@@ -354,6 +366,25 @@
 
             if (getState.CMT_DIV === '1') {
                 this.arrHiddenCols.push(13)
+            }
+
+            // 불량반품 사용 시 매출구분 옵션 불량반품 추가
+            if (getState.RETURN_DIV === '0') {
+                this.hotOptions.salesDivOption.push('불량반품')
+            }
+
+            /**
+             * 매출일자 설정에 따른 날짜 정의
+             * 전일&후일수정 권한체크하여 정의
+             */
+            if (getState.AUTH3_3 === 'N' && getState.AUTH3_4 === 'N') {
+                this.disableType = 'noBoth'
+            } else {
+                if (getState.AUTH3_3 === 'N') {
+                    this.disableType = 'noBefore'
+                } else if (getState.AUTH3_4 === 'N') {
+                    this.disableType = 'noAfter'
+                }
             }
 
             this.hotOptions.columns = [
@@ -406,7 +437,7 @@
                 {data: 'MEMO', type: 'text'},
                 {data: 'EVENT_DIV', type: 'checkbox', className: 'htCenter htMiddle'},
                 // TODO 불량반품은 설정에 따라
-                {data: 'SALES_DIV', type: 'dropdown', source: ["매출", "정상반품", "불량반품"]},
+                {data: 'SALES_DIV', type: 'dropdown', source: this.hotOptions.salesDivOption},
                 {type: 'text'},
                 {type: 'text'},
             ]
@@ -490,20 +521,22 @@
                         this.debounce(this.hot.render())
                     },
                     afterOnCellMouseOver: function (e, coords) {
-                        if (self.model.salesMainItemList.length && coords.col === 16) {
-                            const GET_LAYER = document.querySelector('.profitLayer')
-                            if (GET_LAYER) return
-
+                        if (_get(self.model, 'salesMainItemList').length >= 3 && coords.col === 16) {
                             const r = coords.row
                             const getState = self.getStoreState
 
+                            const GET_ROW_CHECK = this.getDataAtRowProp(r, 'SALES_DIV')
+                            if (!GET_ROW_CHECK) return
+                            const GET_LAYER = document.querySelector('.profitLayer')
+                            if (GET_LAYER) return
+
                             let MAKE_TOOLTIP = ''
-                            var GET_PROFIT_PRICE = parseFloat(this.getDataAtRowProp(r, 'PROFIT_PRICE'))
-                            var GET_TOTAL_PRICE = parseFloat(this.getDataAtRowProp(r, 'TOTAL_PRICE'))
-                            var GET_PURCHASE_PRICE = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PRICE'))
-                            var GET_PURCHASE_PPU = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PPU'))
-                            var GET_BOX_GET_AMT = parseFloat(this.getDataAtRowProp(r, 'PRODUCT.BOX_GET_AMOUNT'))
-                            var SET_PROFIT_PER = (GET_TOTAL_PRICE === 0) ?
+                            const GET_PROFIT_PRICE = parseFloat(this.getDataAtRowProp(r, 'PROFIT_PRICE'))
+                            const GET_TOTAL_PRICE = parseFloat(this.getDataAtRowProp(r, 'TOTAL_PRICE'))
+                            const GET_PURCHASE_PRICE = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PRICE'))
+                            const GET_PURCHASE_PPU = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PPU'))
+                            const GET_BOX_GET_AMT = parseFloat(this.getDataAtRowProp(r, 'PRODUCT.BOX_GET_AMOUNT'))
+                            let SET_PROFIT_PER = (GET_TOTAL_PRICE === 0) ?
                                 0 : (GET_PROFIT_PRICE / Math.abs(GET_TOTAL_PRICE)) * 100
 
                             MAKE_TOOLTIP = `매입단가 : ${numeral(GET_PURCHASE_PPU).format()}<br/>`
@@ -514,7 +547,7 @@
                                 + `이익율 : ${numeral(SET_PROFIT_PER).format()}%`
 
                             let EL_LAYER = document.createElement('div')
-                            EL_LAYER.className = 'view-box'
+                            EL_LAYER.classList.add("view-box")
                             EL_LAYER.innerHTML = MAKE_TOOLTIP
 
                             const GET_WIDTH = window.innerWidth
@@ -559,7 +592,7 @@
                         }
                     },
                     afterOnCellMouseOut: function (e, coords) {
-                        if (self.model.salesMainItemList.length && coords.col === 16) {
+                        if (_get(self.model, 'salesMainItemList').length >= 3 && coords.col === 16) {
                             const GET_LAYER = document.querySelector('.profitLayer')
                             if (GET_LAYER) {
                                 self.removeElement(GET_LAYER)
@@ -579,6 +612,9 @@
                         }
                     },
                     afterSelectionEnd: function (r, c) {
+                        const GET_ROW_CHECK = this.getDataAtRowProp(r, 'IS_SUMMARY')
+                        if (GET_ROW_CHECK) return
+
                         switch (c) {
                             case 0:
                                 self.doGoodsSearch(false, r)
@@ -675,11 +711,8 @@
                                 case 'PRODUCT.PRODUCT_NAME':
                                     td.innerHTML = '합계'
                                     break
-                                case 'EVENT_DIV':
-                                    Handsontable.renderers.CheckboxRenderer.apply(this, arguments)
-                                    break
                                 default:
-                                    Handsontable.renderers.TextRenderer.apply(this, arguments)
+                                    Handsontable.cellTypes[cellProperties.type].renderer.apply(this, arguments)
                                     break
                             }
                         }
@@ -692,7 +725,7 @@
                                 if (instance.getDataAtRowProp(row, 'HISTORY')) {
                                     let iconElement = document.createElement('SPAN')
                                     iconElement.innerText = 'NEW'
-                                    iconElement.className = 'icon-new'
+                                    iconElement.classList.add("icon-new")
 
                                     let textElement = document.createElement('SPAN')
                                     textElement.innerHTML = value
@@ -700,6 +733,19 @@
                                     td.innerHTML = ''
                                     td.appendChild(textElement)
                                     td.insertBefore(iconElement, textElement)
+                                }
+                            }
+                            break
+                        case 15:
+                            cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
+                                Handsontable.cellTypes[cellProperties.type].renderer.apply(this, arguments)
+
+                                if (value === '매출') {
+                                    td.parentNode.classList.remove("type2")
+                                    td.parentNode.classList.add("type1")
+                                } else {
+                                    td.parentNode.classList.remove("type1")
+                                    td.parentNode.classList.add("type2")
                                 }
                             }
                             break
@@ -914,17 +960,32 @@
                 HOT_DATA.forEach((e, r) => {
                     // 합계와 빈줄이 아닐때만 반복
                     if (!e.IS_SUMMARY && !e.IS_EMPTY) {
-                        TOTAL_SUMMARY.BOX_AMOUNT += e.BOX_AMOUNT
-                        TOTAL_SUMMARY.ITEM_AMOUNT += e.ITEM_AMOUNT
-                        TOTAL_SUMMARY.TOTAL_AMOUNT += e.TOTAL_AMOUNT
-                        TOTAL_SUMMARY.SALES_PRICE += e.SALES_PRICE
-                        TOTAL_SUMMARY.DC_PRICE += e.DC_PRICE
-                        TOTAL_SUMMARY.SUPPLY_PRICE += e.SUPPLY_PRICE
-                        TOTAL_SUMMARY.TAX_PRICE += e.TAX_PRICE
-                        TOTAL_SUMMARY.TOTAL_PRICE += e.TOTAL_PRICE
-                        TOTAL_SUMMARY.SERVICE_AMOUNT += e.SERVICE_AMOUNT
+                        if (e.SALES_DIV === '매출') {
+                            TOTAL_SUMMARY.BOX_AMOUNT += e.BOX_AMOUNT
+                            TOTAL_SUMMARY.ITEM_AMOUNT += e.ITEM_AMOUNT
+                            TOTAL_SUMMARY.TOTAL_AMOUNT += e.TOTAL_AMOUNT
+                            TOTAL_SUMMARY.SALES_PRICE += e.SALES_PRICE
+                            TOTAL_SUMMARY.DC_PRICE += e.DC_PRICE
+                            TOTAL_SUMMARY.SUPPLY_PRICE += e.SUPPLY_PRICE
+                            TOTAL_SUMMARY.TAX_PRICE += e.TAX_PRICE
+                            TOTAL_SUMMARY.TOTAL_PRICE += e.TOTAL_PRICE
+                            TOTAL_SUMMARY.SERVICE_AMOUNT += e.SERVICE_AMOUNT
+                        } else {
+                            TOTAL_SUMMARY.BOX_AMOUNT -= e.BOX_AMOUNT
+                            TOTAL_SUMMARY.ITEM_AMOUNT -= e.ITEM_AMOUNT
+                            TOTAL_SUMMARY.TOTAL_AMOUNT -= e.TOTAL_AMOUNT
+                            TOTAL_SUMMARY.SALES_PRICE -= e.SALES_PRICE
+                            TOTAL_SUMMARY.DC_PRICE -= e.DC_PRICE
+                            TOTAL_SUMMARY.SUPPLY_PRICE -= e.SUPPLY_PRICE
+                            TOTAL_SUMMARY.TAX_PRICE -= e.TAX_PRICE
+                            TOTAL_SUMMARY.TOTAL_PRICE -= e.TOTAL_PRICE
+                            TOTAL_SUMMARY.SERVICE_AMOUNT -= e.SERVICE_AMOUNT
+                        }
                     }
                 })
+
+                // 거래 후 잔고 계산을 위한 합계금액 저장
+                this.model.salesTotalPrice = TOTAL_SUMMARY.TOTAL_PRICE
 
                 let SUMMARY_DATA = HOT.getSourceDataAtRow(HOT_COUNT)
                 _merge(SUMMARY_DATA, TOTAL_SUMMARY)
@@ -1196,7 +1257,7 @@
                         }
                         break
                     case 'SALES_DIV':
-                        if (!(newValue === "매출" || newValue === "정상반품" || newValue === "불량반품")) {
+                        if (!(newValue === '매출' || newValue === '정상반품' || newValue === '불량반품')) {
                             HOT.setDataAtRowProp(r, p, '매출', 'set')
                         } else {
                             nTotPrice = nGetPrice - nGetDcPrice
@@ -1285,8 +1346,7 @@
                 upt_values.push([r, 'PROFIT_PRICE', nProfitPrice]) //이익금액 저장
                 upt_values.push([r, 'RECEIVE_PRICE', nBPrice])
 
-                HOT.setDataAtRowProp(new_values, 'set')
-                this.doRenderSummary()
+                HOT.setDataAtRowProp(upt_values, 'set')
             },
 
             // 매출 등록처리

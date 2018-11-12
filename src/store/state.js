@@ -19,6 +19,14 @@ const state = {
     SER_DIV: null,
     CMT_DIV: null,
 
+    /**
+     * 기존 asp상단 추가 로딩?
+     */
+    RETURN_DIV: null,
+    /**
+     * 추가로딩 END
+     */
+
     CONNECT_DIV: null,
 
     USE_POINT_DIV: null, // 단가 소수점 구분

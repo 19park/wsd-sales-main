@@ -214,6 +214,10 @@ html, body {
     display: none;
 }
 
+.handsontable .type1 { color:#000; }
+.handsontable .type2 { color:#f00; }
+
+
 .profitLayer {
     position: fixed;
     top: 0;
@@ -254,6 +258,11 @@ html, body {
 #ledger-body .scr-area .list-item:hover {
     cursor: pointer;
     background-color: #f9f9f9;
+}
+
+#ledger-body .scr-area .list-item.on {
+    font-weight: 600;
+    background-color: #ffdfdf;
 }
 
 /**
