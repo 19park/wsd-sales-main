@@ -8,14 +8,9 @@
                     <!--<strong style="font-size:1.6em;letter-spacing: -0.025rem;">매출등록</strong>-->
                     <!--</th>-->
                     <td width="62%">
-                        <div class="d-inline-block">
-                            <datetime v-model="model.salesDay"
-                                      format="yyyy-MM-dd"
-                                      input-id="startDate"
-                                      input-class="form-control d-inline-block input-90">
-                                <label for="startDate" slot="before">매출일자: </label>
-                            </datetime>
-                        </div>
+                        <DatePicker id="salesDay"
+                                    :value="model.salesDay"
+                                    wrap-classes="d-inline-block"/>
 
                         <CustomerPicker :model="model.customer"
                                         wrap-classes="d-inline-block ml-2"/>
@@ -141,16 +136,8 @@
 </template>
 
 <script>
-    import Vue from 'vue'
     import alert from './mixin/alert'
     import Common from './mixin/common'
-
-    import Datetime from 'vue-datetime'
-    import 'vue-datetime/dist/vue-datetime.css'
-    import {Settings} from 'luxon'
-
-    Settings.defaultLocale = 'ko'
-    Vue.use(Datetime)
 
     import Handsontable from 'handsontable-pro'
     import numeral from 'numeral'
@@ -169,6 +156,7 @@
 
     // 상품 검색 팝업
     import PopGoodsMultiPicker from './popup/PopGoodsMultiPicker.vue'
+    import DatePicker from './inputs/DatePicker.vue'
 
     export default {
         name: "SalesEntry",
@@ -180,7 +168,8 @@
             CollectDivPicker,
             CollectPricePicker,
 
-            PopGoodsMultiPicker
+            PopGoodsMultiPicker,
+            DatePicker
         },
         mixins: [Common, alert],
         watch: {
@@ -326,7 +315,7 @@
                         MEMO: null
                     },
                     colWidths: [
-                        85, 170, 120, 70, 70, 70, 80, 100, 70, 90, 90, 100, 60, 100, 40, 80, 80, 50
+                        85, 170, 120, 70, 70, 70, 80, 90, 70, 90, 90, 90, 60, 100, 40, 80, 80, 50
                     ],
                     // TODO 수량 계란에 따라 판/알 처리
                     colHeaders: [

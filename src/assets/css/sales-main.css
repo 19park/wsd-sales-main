@@ -225,7 +225,7 @@ html, body {
     opacity: 0.9;
     color: #fff;
     border-radius: 5px;
-    z-index: 98;
+    z-index: 120;
     text-align: center;
     padding: 5px;
 }
@@ -255,3 +255,9 @@ html, body {
     cursor: pointer;
     background-color: #f9f9f9;
 }
+
+/**
+    vuejs-datepicker z-index
+    handsontable보다 밑에 깔려서 재정의
+ */
+.vdp-datepicker__calendar { z-index: 102 !important; }

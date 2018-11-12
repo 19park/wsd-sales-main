@@ -3,14 +3,11 @@
         <b-card-header class="d-flex justify-content-between" id="list-header">
             <div class="box">
                 <div class="d-inline-block">
-                    <div class="d-inline-block">
-                        <datetime v-model="model.startDay"
-                                  format="yyyy-MM-dd"
-                                  input-id="rangeDate"
-                                  input-class="form-control d-inline-block input-90">
-                            <label for="rangeDate" slot="before">기간: </label>
-                        </datetime>
-                    </div>
+                    <DatePicker id="salesDay"
+                                :value="model.startDay"
+                                label="기간"
+                                wrap-classes="d-inline-block"/>
+
                     <CustomerPicker :model="model.customer"
                                     wrap-classes="d-inline-block ml-2"/>
                     <EmployeePicker :model="model.member"
@@ -170,25 +167,17 @@
 </template>
 
 <script>
-    import Vue from 'vue'
     import {sales} from '../api/index'
     import Common from './mixin/common'
     import numeral from 'numeral'
     import _merge from 'lodash/merge'
-
-    import Datetime from 'vue-datetime'
-    import 'vue-datetime/dist/vue-datetime.css'
-    import {Settings} from 'luxon'
-
-    Settings.defaultLocale = 'ko'
 
     // 조건조회 관련
     import CustomerPicker from "./inputs/CustomerPicker.vue"
     import EmployeePicker from "./inputs/EmployeePicker.vue"
 
     import VuejsPaginate from 'vuejs-paginate'
-
-    Vue.use(Datetime)
+    import DatePicker from './inputs/DatePicker.vue'
 
     export default {
         name: "SalesList",
@@ -196,6 +185,7 @@
         components: {
             CustomerPicker,
             EmployeePicker,
+            DatePicker,
             'paginate': VuejsPaginate
         },
         data () {
