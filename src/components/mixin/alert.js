@@ -160,10 +160,10 @@ const alert = {
                 html: this.toHtml(message),
                 // allowOutsideClick: true,
                 confirmButtonText: '확인'
-            }).then(() => {
+            }).then((value) => {
                 // 무조건 positive callback 수행
                 // console.debug('click', result)
-                if (positiveCallback) {
+                if (typeof positiveCallback === 'function') {
                     // console.debug('run positive callback')
                     positiveCallback()
                 }
