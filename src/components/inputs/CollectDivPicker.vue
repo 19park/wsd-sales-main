@@ -1,5 +1,5 @@
 <template>
-    <div class="box">
+    <div class="d-flex align-items-center">
         <div class="d-inline-block w-auto">
             <select name="COLLECT_DIV" class="form-control w-auto"
                     v-model="model.div">
@@ -15,11 +15,11 @@
             </select>
         </div>
 
-        <span v-show="getIsShowBank">
+        <div v-show="getIsShowBank">
             <AgentBanksPicker :model="model.bank"
                               ref="select-bank"
                               wrap-classes="d-inline-block ml-2"/>
-        </span>
+        </div>
     </div>
 </template>
 

@@ -1,25 +1,23 @@
 <template>
     <b-card no-body>
         <b-card-header class="d-flex justify-content-between" id="list-header" ref="list-header">
-            <div class="box">
-                <div class="d-inline-block">
-                    <DatePicker id="startDay"
-                                label="기간 :"
-                                :model="model"
-                                wrap-classes="d-inline-block"/>
-                    <span class="ml-1">~</span>
-                    <DatePicker id="endDay"
-                                :model="model"
-                                wrap-classes="d-inline-block"/>
+            <div class="d-flex align-items-center">
+                <DatePicker id="startDay"
+                            label="기간 :"
+                            :model="model"
+                            wrap-classes="d-inline-block"/>
+                <span class="ml-1">~</span>
+                <DatePicker id="endDay"
+                            :model="model"
+                            wrap-classes="d-inline-block"/>
 
-                    <CustomerPicker :model="model.customer"
-                                    wrap-classes="d-inline-block ml-2"/>
-                    <EmployeePicker :model="model.member"
-                                    wrap-classes="d-inline-block ml-2"/>
-                    <button type="button" class="btn btn-search" @click="doListLoad()">
-                        리스트조회
-                    </button>
-                </div>
+                <CustomerPicker :model="model.customer"
+                                wrap-classes="d-inline-block ml-3"/>
+                <EmployeePicker :model="model.member"
+                                wrap-classes="d-inline-block ml-3"/>
+                <button type="button" class="btn btn-search ml-2" @click="doListLoad()">
+                    리스트조회
+                </button>
             </div>
         </b-card-header>
         <b-card-body id="list-body" ref="list-body" class="p-0">

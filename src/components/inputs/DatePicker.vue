@@ -7,7 +7,7 @@
                     :disabledDates="getDisableDates"
                     format="yyyy-MM-dd"
                     wrapper-class="d-inline-block"
-                    input-class="form-control input-90">
+                    input-class="form-control d-inline-block input-90">
         </Datepicker>
     </div>
 </template>
