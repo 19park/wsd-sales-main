@@ -4,7 +4,7 @@
         <b-card no-body id="page-wrapper">
             <div class="box">
                 <div id="entry-panel">
-                    <SalesEntry/>
+                    <SalesEntry ref="sales-entry"/>
                 </div>
             </div>
 
@@ -12,7 +12,7 @@
                 <b-container flude class="mw-100">
                     <b-row>
                         <b-col cols="8">
-                            <SalesList/>
+                            <SalesList ref="sales-list"/>
                         </b-col>
                         <b-col cols="4">
                             <SalesLedger ref="sales-ledger"/>

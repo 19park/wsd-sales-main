@@ -93,9 +93,7 @@ html, body {
     padding: 3px 6px;
 }
 
-#wrapper #entry-panel #mod-area {
-    display: none;
-}
+#wrapper #entry-panel #btn_info { font-size: 2rem; }
 
 #wrapper #list-panel {
     flex-grow: 1;
@@ -269,4 +267,4 @@ html, body {
     vuejs-datepicker z-index
     handsontable보다 밑에 깔려서 재정의
  */
-.vdp-datepicker__calendar { z-index: 102 !important; }
+.vdp-datepicker__calendar { z-index: 120 !important; }
