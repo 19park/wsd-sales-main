@@ -8,27 +8,27 @@
                     <!--<strong style="font-size:1.6em;letter-spacing: -0.025rem;">매출등록</strong>-->
                     <!--</th>-->
                     <td width="62%">
-                    <DatePicker id="salesDay"
-                                label="매출일자 :"
-                                :model="model"
-                                :disableType="getDisableType"
-                                wrap-classes="d-inline-block"/>
+                        <DatePicker id="salesDay"
+                                    label="매출일자 :"
+                                    :model="model"
+                                    :disableType="getDisableType"
+                                    wrap-classes="d-inline-block"/>
 
-                    <CustomerPicker :model="model.customer"
-                                    wrap-classes="d-inline-block ml-2"/>
-                    <EmployeePicker :model="model.member"
-                                    ref="select-member"
-                                    :disabled="true"
-                                    wrap-classes="d-inline-block ml-2"/>
-                    <WarehousePicker :model="model.warehouse"
-                                     ref="select-warehouse"
-                                     wrap-classes="d-inline-block ml-2"
-                                     @nextAct="doGoodsSearch"/>
+                        <CustomerPicker :model="model.customer"
+                                        wrap-classes="d-inline-block ml-2"/>
+                        <EmployeePicker :model="model.member"
+                                        ref="select-member"
+                                        :disabled="true"
+                                        wrap-classes="d-inline-block ml-2"/>
+                        <WarehousePicker :model="model.warehouse"
+                                         ref="select-warehouse"
+                                         wrap-classes="d-inline-block ml-2"
+                                         @nextAct="doGoodsSearch"/>
 
-                    <!-- TODO 트레킹? //-->
-                    <button type="button" class="btn btn-success" @click="doGoodsSearch(true)">납품분
-                    </button>
-                </td>
+                        <!-- TODO 트레킹? //-->
+                        <button type="button" class="btn btn-success" @click="doGoodsSearch(true)">납품분
+                        </button>
+                    </td>
                     <th width="4%" class="b1">현잔고</th>
                     <td width="8%" align="right">
                         <span class="bc_view">{{getCustomerBc}}</span>
@@ -47,7 +47,7 @@
         </div>
 
         <div id="hot-wrap">
-            <div id="hot-table"></div>
+            <div id="hot-table" ref="hot"></div>
             <div id="handle"></div>
         </div>
 
@@ -74,7 +74,7 @@
                         <input type="text" name="SALES_COMMENT" class="form-control input-l">
                     </td>
                     <td width="50%">
-                        <span id="ent-area" class="cf">
+                        <div class="clearfix" v-if="!listState.isModify">
                             <button @click="doSubmit()" class="btn btn-primary">
                                 <font-awesome-icon icon="save"/>&nbsp;저장하기(F8)
                             </button>
@@ -85,10 +85,10 @@
                             <button @click="$router.go(0)" class="btn btn-add">
                                 <font-awesome-icon icon="plus-circle"/>&nbsp;새로등록
                             </button>
-                        </span>
-                        <span id="mod-area" class="cf">
+                        </div>
+                        <div class="clearfix" v-else>
                             <!-- TODO 초기화 또는 리로딩으로 신규처리 추가 //-->
-                            <button class="btn btn-add">
+                            <button @click="$router.go(0)" class="btn btn-add">
                                 <font-awesome-icon icon="plus-circle"/>&nbsp;신규등록
                             </button>
                             <button id="btn_del"
@@ -100,13 +100,14 @@
                                 <font-awesome-icon icon="edit"/>&nbsp;수정저장
                             </button>
                             <button id="btn_prt"
-                                    class="btn btn-print">거래명세표 인쇄
+                                    class="btn btn-print"
+                                    @click="doOpenSalesReport()">거래명세서 인쇄
                             </button>
 
                             <button id="btn_info" class="float-right">
                                 <font-awesome-icon icon="info-circle"/>
                             </button>
-                        </span>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -127,17 +128,52 @@
                                  :isDup="isGoodsPopDup"
                                  @get-data="cbAddGoods">
                 <template slot="footer" class="text-right">
-                    <button class="btn btn-primary"
+                    <button class="btn btn-outline-dark"
                             @click="$root.$emit('bv::hide::modal','pop-goods-multi-picker')">닫기
                     </button>
                 </template>
             </PopGoodsMultiPicker>
         </b-modal>
 
+
+        <!-- 명세표인쇄 팝업 //-->
+        <b-modal id="pop-sales-report"
+                 :lazy="true"
+                 size="md"
+                 body-class="p-0"
+                 hide-header
+                 hide-footer>
+            <PopSalesReport :state="listState">
+                <template slot="footer">
+                    <button class="btn btn-outline-dark"
+                            @click="$root.$emit('bv::hide::modal','pop-sales-report')">닫기
+                    </button>
+                </template>
+            </PopSalesReport>
+        </b-modal>
+
+
+        <!-- 명세표 이메일발송 팝업 //-->
+        <b-modal id="pop-send-email"
+                 :lazy="true"
+                 body-class="p-0"
+                 hide-header
+                 hide-footer>
+            <PopSalesReportEmail :state="listState" ref="pop-sales-report-email">
+                <template slot="footer">
+                    <button class="btn btn-outline-dark"
+                            @click="$root.$emit('bv::hide::modal','pop-send-email')">닫기
+                    </button>
+                </template>
+            </PopSalesReportEmail>
+        </b-modal>
+
+
     </div>
 </template>
 
 <script>
+    import {mapState} from 'vuex'
     import alert from './mixin/alert'
     import Common from './mixin/common'
 
@@ -160,6 +196,10 @@
     import PopGoodsMultiPicker from './popup/PopGoodsMultiPicker.vue'
     import DatePicker from './inputs/DatePicker.vue'
 
+    // 명세서인쇄 팝업
+    import PopSalesReport from './popup/PopSalesReport.vue'
+    import PopSalesReportEmail from './popup/PopSalesReportEmail.vue'
+
     export default {
         name: "SalesEntry",
         components: {
@@ -171,7 +211,10 @@
             CollectPricePicker,
 
             PopGoodsMultiPicker,
-            DatePicker
+            DatePicker,
+
+            PopSalesReport,
+            PopSalesReportEmail
         },
         mixins: [Common, alert],
         watch: {
@@ -180,26 +223,18 @@
                 handler (val, oldVal) {
                     // handsontable 공급가, 세액 뷰처리
                     if (this.hot) {
-                        const defHiddenCols = this.arrHiddenCols
-                        if (val.STAX === '1') { // 부가세 포함거래처
-                            defHiddenCols.push(9, 10)
-                        }
-                        this.hot.updateSettings({
-                            hiddenColumns: {
-                                columns: defHiddenCols
-                            }
-                        })
+                        this.model.member.code = val.MEMBER_CODE
+                        this.$refs['select-warehouse'].$el.children[1].focus()
 
                         this.$nextTick(() => {
-                            this.model.member.code = val.MEMBER_CODE
-                            this.$refs['select-warehouse'].$el.children[1].focus()
+                            this.fnCreateTable()
                         })
                     } else {
                         this.showAlertToExit(
                             '오류',
                             'table 플러그인을 제대로 불러오지 못했습니다.<br/>페이지를 새로고침합니다.',
                             () => {
-                                top.location.reload()
+                                this.$router.go(0)
                             })
                     }
 
@@ -210,17 +245,18 @@
             }
         },
         computed: {
-            getStoreState () {
-                return this.$store.state
-            },
+            ...mapState([
+                'AGENT_NO',
+                'AGENT_SETTINGS'
+            ]),
             getDisableType () {
                 return this.disableType
             },
             getAmtNumericPattern () {
-                return (this.getStoreState.USE_POINT_AMT_DIV === 'Y') ? '0,0[00]' : '0,0'
+                return (this.AGENT_SETTINGS.A_POINT_DIV === 'Y') ? '0,0[00]' : '0,0'
             },
             getPpuNumericPattern () {
-                return (this.getStoreState.USE_POINT_DIV === 'Y') ? '0,0[00]' : '0,0'
+                return (this.AGENT_SETTINGS.POINT_DIV === 'Y') ? '0,0[00]' : '0,0'
             },
             getCustomerBc () {
                 return numeral(this.model.customer.CUSTOMER_BC.NOW_BC).format()
@@ -240,12 +276,26 @@
                 entryContainer: null,
                 // last selected index
                 selectedRowIndex: null,
-                // hiddenCols setting
-                arrHiddenCols: [],
                 // 상품,납품분 조회구분
                 isGoodsPopDup: false,
-                // 매출일자 일자 렌더링구분
+                // 매출일자 권한별 렌더링구분
                 disableType: '',
+
+                listState: {
+                    // 수정상태 구분
+                    isModify: false,
+                    // 명세서 출력 여부
+                    isPrint: false,
+                    report: {
+                        div: null,
+                        type: null
+                    },
+                    model: {
+                        CUSTOMER_CODE: null,
+                        SALES_DAY: null,
+                        SALES_CODE: null
+                    }
+                },
                 model: {
                     salesDay: this.getFullCurrentDate(),
                     customer: {
@@ -288,6 +338,7 @@
                     salesMainItemList: []
                 },
                 hotOptions: {
+                    // TODO 재고 저장 필요
                     salesMainSchema: {
                         // ID: undefined,
                         IS_SUMMARY: false,
@@ -344,39 +395,11 @@
             }
         },
         mounted () {
-            const getState = this.getStoreState
-            switch (getState.AMT_DIV) {
-                case '0': // 박스
-                    this.arrHiddenCols.push(4, 5)
-                    break
-                case '1': // 낱개
-                    this.arrHiddenCols.push(3)
-                    break
-                case '2': // 모두
-                    break
-            }
-
-            if (getState.DC_DIV === '1') {
-                this.arrHiddenCols.push(8)
-            }
-
-            if (getState.SER_DIV === '1') {
-                this.arrHiddenCols.push(12)
-            }
-
-            if (getState.CMT_DIV === '1') {
-                this.arrHiddenCols.push(13)
-            }
-
-            // 불량반품 사용 시 매출구분 옵션 불량반품 추가
-            if (getState.RETURN_DIV === '0') {
-                this.hotOptions.salesDivOption.push('불량반품')
-            }
-
             /**
              * 매출일자 설정에 따른 날짜 정의
              * 전일&후일수정 권한체크하여 정의
              */
+            const getState = this.AGENT_SETTINGS
             if (getState.AUTH3_3 === 'N' && getState.AUTH3_4 === 'N') {
                 this.disableType = 'noBoth'
             } else {
@@ -442,6 +465,8 @@
                 {type: 'text'},
             ]
 
+            // this.node.table = document.getElementById('hot-table')
+            this.node.table = this.$refs.hot
             this.fnCreateTable()
         },
         methods: {
@@ -474,14 +499,57 @@
             /**
              * hot 인스턴스 생성
              */
-            fnCreateTable () {
+            fnCreateTable (GET_AMT_DIV) {
                 const self = this
-                let HotTable = document.getElementById('hot-table')
-                self.node.table = HotTable
+                const HotTable = self.node.table
+
+                // init
+                if (this.hot) {
+                    this.hot.destroy()
+                }
+                this.model.salesMainItemList = []
+
+                // GET VUEX DATA
+                const getState = self.AGENT_SETTINGS
+                const getAmountDiv = (GET_AMT_DIV) ? GET_AMT_DIV : getState.AMOUNT_DIV
+
+                let arrHiddenCols = []
+                switch (getAmountDiv) {
+                    case '0': // 박스
+                        arrHiddenCols.push(4, 5)
+                        break
+                    case '1': // 낱개
+                        arrHiddenCols.push(3)
+                        break
+                    case '2': // 모두
+                        break
+                }
+
+                if (getState.DC_DIV === '1') {
+                    arrHiddenCols.push(8)
+                }
+
+                if (getState.SERVICE_DIV === '1') {
+                    arrHiddenCols.push(12)
+                }
+
+                if (getState.CMT_DIV === '1') {
+                    arrHiddenCols.push(13)
+                }
+
+                if (self.model.customer.STAX === '1') { // 부가세 포함거래처
+                    arrHiddenCols.push(9, 10)
+                }
+
+                // 불량반품 사용 시 매출구분 옵션 불량반품 추가
+                if (getState.RETURN_DIV === '0') {
+                    this.hotOptions.salesDivOption.push('불량반품')
+                }
+
 
                 let initData = []
-                const emptyData = _cloneDeep(this.hotOptions.salesMainSchema)
-                const summaryData = _cloneDeep(this.hotOptions.salesMainSchema)
+                const emptyData = _cloneDeep(self.hotOptions.salesMainSchema)
+                const summaryData = _cloneDeep(self.hotOptions.salesMainSchema)
                 emptyData.IS_EMPTY = true
                 summaryData.IS_SUMMARY = true
 
@@ -490,23 +558,19 @@
 
                 this.hot = new Handsontable(HotTable, {
                     data: initData,
-                    dataSchema: this.hotOptions.salesMainSchema,
+                    dataSchema: self.hotOptions.salesMainSchema,
                     selectionMode: 'single',
                     autoWrapRow: true,
                     // fixedColumnsLeft: 2,
                     stretchH: 'all',
                     rowHeaders: true,
-                    colHeaders: this.hotOptions.colHeaders,
-                    colWidths: this.hotOptions.colWidths,
-                    columns: this.hotOptions.columns,
+                    colHeaders: self.hotOptions.colHeaders,
+                    colWidths: self.hotOptions.colWidths,
+                    columns: self.hotOptions.columns,
                     manualColumnResize: true,
                     enterBeginsEditing: false,
                     outsideClickDeselects: false,
                     fixedRowsBottom: 1,
-                    hiddenColumns: {
-                        columns: [],
-                        indicators: false
-                    },
                     contextMenu: {
                         items: {
                             "row_above": {name: '위에 줄 추가'},
@@ -517,13 +581,13 @@
                         this.doFixRowRenderer()
                     },
                     afterScrollVertically: () => {
-                        // TODO 스크롤 시 X버튼이 렌더링안돼서 디바운싱렌더처리
+                        // FIXME 스크롤 시 X 버튼이 렌더링안돼서 디바운싱렌더처리
                         this.debounce(this.hot.render())
                     },
                     afterOnCellMouseOver: function (e, coords) {
                         if (_get(self.model, 'salesMainItemList').length >= 3 && coords.col === 16) {
                             const r = coords.row
-                            const getState = self.getStoreState
+                            const getState = self.AGENT_SETTINGS
 
                             const GET_ROW_CHECK = this.getDataAtRowProp(r, 'SALES_DIV')
                             if (!GET_ROW_CHECK) return
@@ -540,7 +604,7 @@
                                 0 : (GET_PROFIT_PRICE / Math.abs(GET_TOTAL_PRICE)) * 100
 
                             MAKE_TOOLTIP = `매입단가 : ${numeral(GET_PURCHASE_PPU).format()}<br/>`
-                            if (getState.AMT_DIV === '2') {
+                            if (getState.AMOUNT_DIV === '2') {
                                 MAKE_TOOLTIP += `매입박스단가: ${numeral(GET_PURCHASE_PPU * GET_BOX_GET_AMT).format()}<br/>`
                             }
                             MAKE_TOOLTIP += `이익금: ${numeral(GET_PROFIT_PRICE).format()}<br/>`
@@ -650,7 +714,11 @@
                 })
 
                 this.hot.updateSettings({
-                    cells: this.doCellRenderer
+                    cells: this.doCellRenderer,
+                    hiddenColumns: {
+                        columns: arrHiddenCols,
+                        indicators: false
+                    }
                 })
 
                 // TODO 라이센스 문구 제거
@@ -754,7 +822,12 @@
                             cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
                                 Handsontable.renderers.TextRenderer.apply(this, arguments)
                                 td.className = 'htViewRow'
-                                td.innerHTML = '<div class="btn-view">&nbsp;&nbsp;보기&nbsp;&nbsp;</div>'
+
+                                let addClassTxt = 'btn-view'
+                                if (parseFloat(instance.getDataAtRowProp(row, 'PROFIT_PRICE')) < 0){
+                                    addClassTxt += ' m'
+                                }
+                                td.innerHTML = `<div class="${addClassTxt}">&nbsp;&nbsp;보기&nbsp;&nbsp;</div>`
                             }
                             break
                         case 17:
@@ -814,11 +887,11 @@
              */
             formatData (data) {
                 // GET VUEX STATE
-                const getState = this.getStoreState
+                const getState = this.AGENT_SETTINGS
                 const getCustomer = this.model.customer
 
                 // 가맹점 수량 구분
-                const getAmtDiv = getState.AMT_DIV
+                const getAmtDiv = getState.AMOUNT_DIV
 
                 // 거래처 부가세 구분
                 const getCustomerStax = getCustomer.STAX
@@ -1091,10 +1164,10 @@
                 }
 
                 // GET VUEX STATE
-                const getState = this.getStoreState
+                const getState = this.AGENT_SETTINGS
 
                 // 가맹점 수량 구분
-                const setAmtDiv = getState.AMT_DIV
+                const setAmtDiv = getState.AMOUNT_DIV
                 const sDcDiv = getState.DC_DIV
 
                 // 거래처 부가세 구분
@@ -1153,9 +1226,9 @@
 
                 if (nGetBoxCnt === 0 && nGetCnt === 0) {
                     let init_values = []
-                    if (setAmtDiv === '2') {
-                        init_values.push([r, 'TOTAL_AMOUNT', 0])
-                    }
+                    // if (setAmtDiv === '2') {
+                    init_values.push([r, 'TOTAL_AMOUNT', 0])
+                    // }
                     if (sDcDiv === '0') {
                         init_values.push([r, 'DC_PRICE', nGetDcPrice])
                     }
@@ -1245,13 +1318,12 @@
                             nDcPer = 100 / (nGetPrice / nSetDcPrice)
                             nSalesPrice = nSupplyPrice + nTaxPrice + nSetDcPrice
 
-                            if (sDcDiv === '0') {
-                                new_values.push([r, 'DC_PRICE', nSetDcPrice])
-                            }
+                            // if (sDcDiv === '0') {
+                            new_values.push([r, 'DC_PRICE', nSetDcPrice])
+                            // }
 
                             new_values.push([r, 'SUPPLY_PRICE', nSupplyPrice])
                             new_values.push([r, 'TAX_PRICE', nTaxPrice])
-                            new_values.push([r, 'SALES_PRICE', nSalesPrice])
 
                             HOT.setDataAtRowProp(new_values, 'set')
                         }
@@ -1271,9 +1343,9 @@
                     case 'ITEM_AMOUNT':
                         nTotPrice = nSumPrice - nGetDcPrice
 
-                        if (setAmtDiv === '2') {
-                            new_values.push([r, 'TOTAL_AMOUNT', nTotAmt])
-                        }
+                        // if (setAmtDiv === '2') {
+                        new_values.push([r, 'TOTAL_AMOUNT', nTotAmt])
+                        // }
                         new_values.push([r, 'SALES_PRICE', nSumPrice])
 
                         arrCalPrice = this.doRetCalPrice(nTotPrice, sCustomerStax, nTaxDiv)
@@ -1292,9 +1364,9 @@
                         nTotPrice = nSumPrice - nGetDcPrice
 
                         new_values.push([r, 'SALES_PRICE', nSumPrice])
-                        if (sDcDiv === '0') {
-                            new_values.push([r, 'DC_PRICE', nGetDcPrice])
-                        }
+                        // if (sDcDiv === '0') {
+                        new_values.push([r, 'DC_PRICE', nGetDcPrice])
+                        // }
 
                         arrCalPrice = this.doRetCalPrice(nTotPrice, sCustomerStax, nTaxDiv)
                         nSupplyPrice = arrCalPrice[0]
@@ -1339,7 +1411,7 @@
 
                 let upt_values = []
                 upt_values.push([r, 'STAX_PRICE', nStaxPrice])
-                upt_values.push([r, 'DC_PRICE', nGetDcPrice])
+                // upt_values.push([r, 'DC_PRICE', nGetDcPrice])
                 upt_values.push([r, 'DC_PERCENT', nDcPer])
 
                 upt_values.push([r, 'TOTAL_PRICE', nAPrice])
@@ -1349,9 +1421,59 @@
                 HOT.setDataAtRowProp(upt_values, 'set')
             },
 
-            // 매출 등록처리
-            doSubmit (sDiv) {
+            // 매출 등록
+            doSubmit () {
+                console.log(this.doPreprocessModel())
+            },
 
+            // handsontable table data 가공
+            doPreprocessModel () {
+                let retModel = []
+                const getTableData = this.hot.getSourceData()
+
+                getTableData.forEach(item => {
+                    // 상품 ROW가 아니면 건너뛰기
+                    if (!item || item.IS_EMPTY || item.IS_SUMMARY) return
+
+                    let setTradeType = ''
+                    switch (item.SALES_DIV) {
+                        case '매출':
+                            setTradeType = 'SALES'
+                            break
+                        case '정상반품':
+                            setTradeType = 'NORMAL_RETURN'
+                            break
+                        case '불량반품':
+                            setTradeType = 'BAD_RETURN'
+                            break
+                    }
+
+                    const getProduct = item.PRODUCT
+                    const salesProductItem = {
+                        AGENT_NO: this.AGENT_NO,
+                        PRODUCT_CODE: getProduct.PRODUCT_CODE,
+                        PRODUCT_TAX_DIV: getProduct.TAX_DIV,
+                        BOX_GET_AMOUNT: getProduct.BOX_GET_AMOUNT,
+                        ITEM_AMOUNT: item.ITEM_AMOUNT,
+                        BOX_AMOUNT: item.BOX_AMOUNT,
+                        SALES_AMOUNT: item.TOTAL_AMOUNT,
+                        SERVICE_AMOUNT: item.SERVICE_AMOUNT,
+                        DC_PRICE: item.DC_PRICE,
+                        SALES_TRADE_TYPE: setTradeType,
+                        IS_EVENT: item.IS_EMPTY,
+                        SALES_PPU: item.SALES_PPU,
+                        PURCHASE_PPU: item.PURCHASE_PPU,
+                        COMMENT: item.MEMO
+                    }
+                    retModel.push(salesProductItem)
+                })
+
+                return retModel
+            },
+
+            // 명세서 팝업 오픈
+            doOpenSalesReport () {
+                this.$root.$emit('bv::show::modal', 'pop-sales-report')
             }
         }
     }

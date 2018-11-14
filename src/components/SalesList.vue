@@ -96,7 +96,7 @@
                             <td align="left" class="elip">{{item.CUSTOMER_NAME}}</td>
                             <td align="left">{{item.MEMBER_NAME}}</td>
                             <td align="right">{{item.ITEM_COUNT}}</td>
-                            <td align="right">{{item.PRICE}}</td>
+                            <td align="right">{{getFormatPrice(item.PRICE)}}</td>
                             <td align="left">{{item.REG_NAME}}</td>
                             <td align="left">{{(item.APP_DIV === 'W')?'웹':'모바일'}}</td>
                             <td>{{(item.SLIP_YN)?'Y':'N'}}</td>
@@ -152,12 +152,8 @@
                           :click-handler="doListClick">
                 </paginate>
                 <div class="float-right d-flex align-items-center">
-                    <!--<span class="mr-3">-->
-                    <!--<input type="checkbox" value="Y" id="re-print">-->
-                    <!--<label for="re-print">재발행포함</label>-->
-                    <!--</span>-->
                     <button type="button" class="btn btn-print mr-1"
-                            @click="$('#popPrintAll').modal('show')">명세서일괄인쇄
+                            @click="doOpenSalesReport()">명세서일괄인쇄
                     </button>
                     <button type="button" class="btn btn-excel mr-1" @click="goExcel()"
                             style="width:60px;">엑셀
@@ -168,6 +164,26 @@
                 </div>
             </div>
         </b-card-footer>
+
+
+
+        <!-- 명세표인쇄 팝업 //-->
+        <b-modal id="pop-sales-batch-report"
+                 :lazy="true"
+                 size="md"
+                 body-class="p-0"
+                 hide-header
+                 hide-footer>
+            <PopSalesReport :state="listState" :isBatch="true">
+                <template slot="footer">
+                    <button class="btn btn-outline-dark"
+                            @click="$root.$emit('bv::hide::modal','pop-sales-batch-report')">닫기
+                    </button>
+                </template>
+            </PopSalesReport>
+        </b-modal>
+
+
     </b-card>
 </template>
 
@@ -185,14 +201,19 @@
     import VuejsPaginate from 'vuejs-paginate'
     import DatePicker from './inputs/DatePicker.vue'
 
+    // 명세서인쇄 팝업
+    import PopSalesReport from './popup/PopSalesReport.vue'
+
     export default {
         name: "SalesList",
         mixins: [Common],
         components: {
+            DatePicker,
             CustomerPicker,
             EmployeePicker,
-            DatePicker,
-            'paginate': VuejsPaginate
+            'paginate': VuejsPaginate,
+
+            PopSalesReport
         },
         data () {
             return {
@@ -209,9 +230,11 @@
                     }
                 },
                 listState: {
-                    SALES_CODE: null,
-                    SALES_DAY: null,
-                    CUSTOMER_CODE: null
+                    model: {
+                        SALES_CODE: null,
+                        SALES_DAY: null,
+                        CUSTOMER_CODE: null
+                    }
                 },
                 listModel: {
                     page: 1,
@@ -227,6 +250,7 @@
                     }
                 },
                 node: {
+                    entry: null, // 매출등록 컴포넌트
                     root: null,
                     header: null,
                     footer: null,
@@ -242,6 +266,7 @@
             }
         },
         mounted () {
+            this.node.entry = this.$parent.$refs['sales-entry']
             this.node.root = this.$parent.$refs['list-panel']
             this.node.header = this.$refs['list-header']
             this.node.footer = this.$refs['list-footer']
@@ -327,7 +352,7 @@
                     SALES_DAY: item.SALES_DAY,
                     CUSTOMER_CODE: item.CUSTOMER_CODE
                 }
-                return _match(this.listState, matchObj)
+                return _match(this.listState.model, matchObj)
             },
 
             // 매출 합계 추가 조회
@@ -346,6 +371,10 @@
                 return numeral(this.getSalesSummary[key]).format()
             },
 
+            getFormatPrice (n) {
+                return numeral(n).format()
+            },
+
             /**
              * 조회 된 매출목록의 ROW 클릭 시 원장 및 데이터 조회
              * @param obj
@@ -362,9 +391,16 @@
                 GET_ROW.classList.add('on')
 
                 // 리스트 상태 값 저장 (페이지 이동 시)
-                this.listState.SALES_CODE = obj.SALES_CODE
-                this.listState.SALES_DAY = obj.SALES_DAY
-                this.listState.CUSTOMER_CODE = obj.CUSTOMER_CODE
+                this.listState.model.SALES_CODE = obj.SALES_CODE
+                this.listState.model.SALES_DAY = obj.SALES_DAY
+                this.listState.model.CUSTOMER_CODE = obj.CUSTOMER_CODE
+
+                // 매출등록 컴포넌트 수정상태 변경
+                this.node.entry.listState.isModify = true
+
+                // 명세서 출력여부 세팅
+                this.node.entry.listState.isPrint = obj.SLIP_YN
+                this.node.entry.listState.model = this.listState.model
 
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
@@ -377,16 +413,29 @@
                 this.$parent.$refs['sales-ledger'].getSalesLedger(postLedgerData)
             },
 
+            // 형제 노드 찾기
             getSiblings (n) {
                 return [...n.parentElement.children].filter(c => c != n)
             },
 
+            // 매출목록 엑셀저장
             goExcel () {
 
             },
 
+            // 매출목록 인쇄
             goPrint () {
 
+            },
+
+            // 명세서 팝업 오픈
+            doOpenSalesReport () {
+                // 리스트 데이터 확인
+                if (this.listModel.data.length < 1) {
+                    this.$snotify.error('일괄 인쇄 할 데이터가 없습니다.', '데이터 없음')
+                    return
+                }
+                this.$root.$emit('bv::show::modal', 'pop-sales-batch-report')
             }
         }
     }
