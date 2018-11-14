@@ -2,6 +2,8 @@ import Vue from 'vue'
 import _get from 'lodash/get'
 import Moment from 'moment-timezone'
 
+import axios from 'axios'
+
 /**
  * 공통사용함수 정의
  */
@@ -174,7 +176,7 @@ const Common = {
         // trigger element remove
         removeElement (p) {
             const elem = (typeof p === 'String') ?
-                            document.getElementById(p) : p
+                document.getElementById(p) : p
             return elem.parentNode.removeChild(elem)
         },
 
@@ -189,16 +191,83 @@ const Common = {
 
         // 스크롤 이동 처리 함수
         scrollTo (element, from, to, duration, currentTime) {
-            if (from <= 0) { from = 0 }
-            if (to <= 0) { to = 0 }
-            if (currentTime>=duration) return
-            let delta = to-from
+            if (from <= 0) {
+                from = 0
+            }
+            if (to <= 0) {
+                to = 0
+            }
+            if (currentTime >= duration) return
+            let delta = to - from
             let progress = currentTime / duration * Math.PI / 2
             let position = delta * (Math.sin(progress))
             setTimeout(() => {
                 element.scrollTop = from + position
                 this.scrollTo(element, from, to, duration, currentTime + 10)
             }, 10)
+        },
+
+
+        /**
+         * jsReport api post > return pdf
+         * self > vue instance
+         * getData > post json data
+         * getName > window popup name
+         */
+        fnGetPdfPrint (self, url, data, fn) {
+            let wPop
+            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            } else {
+                wPop = window.open('about:blank', 'report', 'width=1000,height=1000,menubar=no,toolbar=no,location=yes,status=yes,scrollbars=auto,resizable=yes')
+                wPop.resizeTo(1000, 1000)
+                wPop.moveTo(50, 50)
+            }
+
+            const loader = this.$loading.show({
+                container: self.$el,
+                canCancel: false
+            })
+
+            axios.post(url, data, {
+                responseType: 'arraybuffer',
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8'
+                }
+            }).then((res) => {
+                let blob = new Blob([res.data], {type: 'application/pdf'})
+
+                if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                    window.navigator.msSaveOrOpenBlob(blob)
+                } else {
+                    const url = window.URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+
+                    link.href = url
+                    link.target = 'report'
+                    self.$el.appendChild(link)
+                    link.click()
+
+                    /*
+                    let wPop = window.open(url, getname, 'width=1000,height=1000,menubar=no,toolbar=no,location=yes,status=yes,scrollbars=auto,resizable=yes')
+
+                    if(wPop == null) {
+                      this.throwNotify(`<span>팝업이 차단 되어있습니다.<br/>브라우저 설정을 확인해주세요.</span>`)
+                    }else{
+                      wPop.resizeTo(1000, 1000)
+                      wPop.moveTo(100, 100)
+                    }
+                    */
+                }
+
+                // 함수가 넘어오면 마지막에 처리
+                if (typeof fn === 'function') fn()
+                loader.hide()
+            })
+                .catch((err) => {
+                    console.log('pdf-error : ' + err)
+                    this.$snotify.error('명세서 인쇄 실패', this.parseErrorMsg(err))
+                    loader.hide()
+                })
         }
     }
 }

@@ -13,17 +13,6 @@ const cookies = {
     USER_MMDIV: 'USER_MMDIV',
 
     SYS_DIV: 'USER_SYSDIV',
-    SHOP_DIV: 'USER_SHOPDIV',
-    EGG_DIV: 'USER_EGGDIV',
-    AMT_DIV: 'USER_AMTDIV',
-    DC_DIV: 'USER_DCDIV',
-    SER_DIV: 'USER_SERDIV',
-    CMT_DIV: 'USER_CMTDIV',
-
-    CONNECT_DIV: 'USER_CONNECTDIV',
-
-    USE_POINT_DIV: 'USER_POINTDIV',
-    USE_POINT_AMT_DIV: 'USER_APOINTDIV',
 
     AUTH1_1: 'USER_AUTH1_1', // 저장
     AUTH1_2: 'USER_AUTH1_2', // 수정
@@ -48,6 +37,6 @@ const cookies = {
     AUTH3_5: 'USER_AUTH3_5', // 단가수정
     AUTH3_6: 'USER_AUTH3_6', // 잔고수정
     AUTH3_7: 'USER_AUTH3_7' // 재고수정
-};
+}
 
-export default cookies;
+export default cookies

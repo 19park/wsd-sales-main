@@ -26,17 +26,20 @@ Object.keys(cookies).forEach(function (key) {
         key: key,
         value: localStorage.getItem(cookies[key])
     };
-    store.commit('SET_COOKIES', objItem);
+    store.commit('SET_COOKIES', objItem)
 });
 
-const agentRegNo = cookies['AGENT_RNO'];
+const agentRegNo = cookies['AGENT_RNO']
 if (!localStorage.getItem(agentRegNo)) {
-    throw new Error("사업자 정보가 부족합니다.");
+    throw new Error("사업자 정보가 부족합니다.")
 }
 
 new Vue({
     el: '#app',
     router,
     store,
+    created () {
+        this.$store.dispatch('FETCH_AGENT')
+    },
     render: h => h(App)
 })

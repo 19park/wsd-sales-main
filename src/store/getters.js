@@ -1,6 +1,9 @@
 const getters = {
-    isAuth (state) {
-        return !!state.token
+    getAgentSettings (state) {
+        return state.AGENT_SETTINGS
+    },
+    getPrintSettings (state) {
+        return state.PRINT_SETTINGS
     }
 }
 
