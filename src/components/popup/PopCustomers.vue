@@ -98,7 +98,7 @@
                 },
                 postData: {
                     trade_type: 'SALES',
-                    member_code: '0001',
+                    member_code: this.$store.state.USER_CODE,
                     with_balance: true,
                     customer_type1: null,
                     keyword: '',
@@ -108,10 +108,10 @@
             }
         },
         computed: {
-          getPostData () {
-              this.postData.customer_type1 = this.$refs['customer-type'].value
-              return this.postData
-          }
+            getPostData () {
+                this.postData.customer_type1 = this.$refs['customer-type'].value
+                return this.postData
+            },
         },
         methods: {
             fnProdClick (row) {
@@ -150,8 +150,8 @@
                         this.$toasted.show(this.fetchText.noResults)
                     } else {
                         const getAgentMemberList = this.$store.state.AGENT_MEMBER_LIST
-                        data.list.forEach((e, i)=>{
-                          e.MEMBER_NAME = _get(_find(getAgentMemberList, { value: e.MEMBER_CODE }), 'name')
+                        data.list.forEach((e, i) => {
+                            e.MEMBER_NAME = _get(_find(getAgentMemberList, {value: e.MEMBER_CODE}), 'name')
                         })
 
                         this.hotOptions.data = this.hotOptions.data.concat(data.list)

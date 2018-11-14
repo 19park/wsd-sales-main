@@ -13,7 +13,7 @@
                  hide-header>
             <PopCustomers @get-data="cbAddCustomers">
                 <div slot="footer" class="text-right">
-                    <button class="btn btn-primary"
+                    <button class="btn btn-outline-dark"
                             @click="$root.$emit('bv::hide::modal',`${defPopName}`)">닫기
                     </button>
                 </div>
@@ -56,9 +56,14 @@
              * 거래처 팝업에서 선택된 정보를 hansOnTable 에 row 추가
              */
             cbAddCustomers (data) {
+                if (!data.MEMBER_CODE) {
+                    this.$snotify.warning('설정 후 다시 시도해주세요.', '담당자 정보없음')
+                    return
+                }
                 if (!data.BANK_INFO) {
                     data.BANK_INFO = null
                 }
+
                 Object.assign(this.model, data)
 
                 // 거래처물품 팝업 숨김
