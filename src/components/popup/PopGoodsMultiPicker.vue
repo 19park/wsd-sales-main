@@ -3,6 +3,8 @@
     <card class="mb-0">
         <div slot="header">
             <h4 class="card-title d-inline-block">{{getPopName}}</h4>
+
+            <ProductTypePicker ref="product-type" wrap-classes="w-auto ml-3"/>
         </div>
         <div class="box mb-3">
             <b-input-group>
@@ -40,7 +42,7 @@
     import alert from '../mixin/alert'
 
     import ResultTable from './ResultTableChk.vue'
-    import CustomerTypePicker from '../inputs/CustomerTypePicker.vue'
+    import ProductTypePicker from '../inputs/ProductTypePicker.vue'
 
     export default {
         name: 'PopGoodsMultiPicker',
@@ -54,7 +56,7 @@
         },
         components: {
             ResultTable,
-            CustomerTypePicker
+            ProductTypePicker
         },
         data () {
             return {
@@ -114,7 +116,7 @@
         },
         computed: {
             getPostData () {
-                //this.postData.customer_type1 = this.$refs['customer-type'].value
+                this.postData.product_type1 = this.$refs['product-type'].value
                 return this.postData
             },
             getPopName () {
