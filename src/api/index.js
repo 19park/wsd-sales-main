@@ -54,7 +54,7 @@ const request = (method, url, data) => {
             } else {
                 const {status} = err.response
                 if (status === SETTINGS.UNAUTHORIZED) SETTINGS.onUnauthorized()
-                throw err.response
+                throw err
             }
         })
 }
@@ -66,6 +66,10 @@ export const agent = {
     },
     fetchBank (data) {
         return request('get', '/api/v6/agentBanks', data)
+    },
+    // 명세서 인쇄 시 변경 되면 가맹점에 업데이트
+    updatePrtOpts (data) {
+        return request('put', `/api/v6/agents/${store.state.AGENT_RNO}/prtOpts`, data)
     }
 }
 
@@ -123,5 +127,19 @@ export const sales = {
     // 명세서 이메일 발송
     sendEmail (url) {
         return request('get', url)
+    },
+    // 명세서 인쇄 여부 업데이트
+    patchPrintComp (data) {
+        return request('patch', `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}/printing`)
+    },
+
+    // 매출 등록
+    createSales (data) {
+        return request('post', '/api/v6/sales', data)
+    },
+
+    // 매출 단일 조회
+    fetchData (data) {
+        return request('get', `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}`)
     }
 }

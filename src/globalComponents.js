@@ -10,6 +10,7 @@ import "handsontable-pro/dist/handsontable.full.css"
 import "./assets/css/handsontable.custom.css"
 import "./assets/css/sales-main.css"
 
+import Toasted from 'vue-toasted'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
@@ -25,11 +26,14 @@ import {
 import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
 library.add(faSave, faEdit, faPlusCircle, faTrashAlt, faInfoCircle, faSearch)
 
-import Toasted from 'vue-toasted'
+/* load custom plugin */
+import getRefs from './components/plugin/getRefs'
+import common from './components/plugin/common'
 
 export default {
     install (Vue) {
         Vue.use(BootstrapVue)
+
         Vue.component('card', Card)
         Vue.component('font-awesome-icon', FontAwesomeIcon)
 
@@ -46,6 +50,11 @@ export default {
                 return this._uid
             }
         })
+
+
+        // use custom plugin
+        Vue.use(getRefs)
+        Vue.use(common)
     }
 }
 

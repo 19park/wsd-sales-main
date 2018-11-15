@@ -39,7 +39,7 @@ const alert = {
          */
         showAlertToSave (positiveCallback) {
             this.showAlertToQuestion('question', // 질의
-                '확인', // 저장 확인 메시지
+                '저장하시겠습니까?', // 저장 확인 메시지
                 null,
                 '저장', // 저장 버튼
                 positiveCallback, // 저장 이벤트 핸들러

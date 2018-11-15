@@ -8,11 +8,6 @@ import axios from 'axios'
  * 공통사용함수 정의
  */
 const Common = {
-    data () {
-        return {
-            windowHeight: 0
-        }
-    },
     methods: {
         /**
          * 오늘날짜 date 타입으로 그대로 return
@@ -90,46 +85,6 @@ const Common = {
             return Moment.tz(date, zone).toISOString()
         },
 
-
-        /****************************************************************************************/
-        /**
-         * err 을 받아서 에러객체값에 따라서 alert 창 노출
-         */
-        parseErrorMsg (err) {
-            let msg = ''
-            if (!err.response) {
-                msg = err
-                console.log(1, err)
-            } else {
-                console.log(2, err.response)
-                if (err.response.data) {
-                    if (err.response.data.detail) {
-                        let tmpErrTxt = ''
-                        // noinspection JSUnresolvedVariable
-                        err.response.data.detail.errors.forEach(function (v, k) {
-                            if (k > 0) {
-                                tmpErrTxt += '\n'
-                            }
-                            tmpErrTxt += v.message
-                        })
-                        msg = err.response.data.message + '\n' + tmpErrTxt
-                    } else if (err.response.data.error) {
-                        msg = err.response.data.error.message
-                    } else {
-                        msg = err.response.data.message
-                    }
-                } else {
-                    msg = err.response.statusText
-                }
-            }
-            return msg
-        },
-
-        getErrorMsg (err) {
-            const msg = this.parseErrorMsg(err)
-            alert(msg)
-        },
-
         /****************************************** 숫자관련 ********************************************/
         /**
          * 숫자값 받아서 number 타입인지 체크 return
@@ -172,41 +127,6 @@ const Common = {
             })
             return newObj
         },
-
-        // trigger element remove
-        removeElement (p) {
-            const elem = (typeof p === 'String') ?
-                document.getElementById(p) : p
-            return elem.parentNode.removeChild(elem)
-        },
-
-        // resize callback
-        debounce (func) {
-            let timer
-            return function (event) {
-                if (timer) clearTimeout(timer)
-                timer = setTimeout(func, 300, event)
-            }
-        },
-
-        // 스크롤 이동 처리 함수
-        scrollTo (element, from, to, duration, currentTime) {
-            if (from <= 0) {
-                from = 0
-            }
-            if (to <= 0) {
-                to = 0
-            }
-            if (currentTime >= duration) return
-            let delta = to - from
-            let progress = currentTime / duration * Math.PI / 2
-            let position = delta * (Math.sin(progress))
-            setTimeout(() => {
-                element.scrollTop = from + position
-                this.scrollTo(element, from, to, duration, currentTime + 10)
-            }, 10)
-        },
-
 
         /**
          * jsReport api post > return pdf
@@ -262,12 +182,11 @@ const Common = {
                 // 함수가 넘어오면 마지막에 처리
                 if (typeof fn === 'function') fn()
                 loader.hide()
+            }).catch((err) => {
+                console.log('pdf-error : ' + err)
+                this.$snotify.error('명세서 인쇄 실패', this.$common.parseErrorMsg(err))
+                loader.hide()
             })
-                .catch((err) => {
-                    console.log('pdf-error : ' + err)
-                    this.$snotify.error('명세서 인쇄 실패', this.parseErrorMsg(err))
-                    loader.hide()
-                })
         }
     }
 }
