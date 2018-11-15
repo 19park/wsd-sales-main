@@ -194,7 +194,7 @@
                     this.isLoading = false
                     loader.hide()
 
-                    this.$snotify.error('상품 목록 조회 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('상품 목록 조회 실패', this.$common.parseErrorMsg(err))
                 })
             },
             doClickComp () {

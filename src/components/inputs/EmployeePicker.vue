@@ -62,7 +62,7 @@
                 this.options = [
                     { value: null, text: '로딩 실패' }
                 ]
-                this.$snotify.error('담당자목록 조회 실패', this.parseErrorMsg(err))
+                this.$snotify.error('담당자목록 조회 실패', this.$common.parseErrorMsg(err))
             })
         }
     }

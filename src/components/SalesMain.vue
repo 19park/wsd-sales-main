@@ -1,6 +1,5 @@
 <template>
     <div id="wrapper">
-
         <b-card no-body id="page-wrapper">
             <div class="box">
                 <div id="entry-panel">
@@ -27,7 +26,6 @@
 </template>
 
 <script>
-    // 매출 관련 컴포넌트
     import SalesEntry from './SalesEntry.vue'
     import SalesList from './SalesList.vue'
     import SalesLedger from './SalesLedger.vue'

@@ -10,11 +10,9 @@
 
 <script>
     import {agent} from '../../api/index'
-    import Common from '../mixin/common'
 
     export default {
         name: "AgentBanksPicker",
-        mixins: [Common],
         props: {
             label: String,
             model: Object,
@@ -64,7 +62,7 @@
                 this.options = [
                     { value: null, text: '로딩 실패' }
                 ]
-                this.$snotify.error('계좌 조회 실패', this.parseErrorMsg(err))
+                this.$snotify.error('계좌 조회 실패', this.$common.parseErrorMsg(err))
             })
         }
     }

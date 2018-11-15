@@ -49,7 +49,7 @@
                 this.options = [
                     { value: null, text: '로딩 실패' }
                 ]
-                this.$snotify.error('상품 유형 조회 실패', this.parseErrorMsg(err))
+                this.$snotify.error('상품 유형 조회 실패', this.$common.parseErrorMsg(err))
             })
         }
     }

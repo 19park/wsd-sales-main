@@ -102,14 +102,14 @@
             }
         },
         mounted () {
-            this.node.root = this.$parent.$refs['list-panel']
+            this.node.root = this.$salesListWrap()
             this.node.header = this.$refs['ledger-header']
             this.node.footer = this.$refs['ledger-footer']
             this.node.body = this.$refs['ledger-body']
             this.node.bodyTitle = this.node.body.querySelector('.tit-area')
             this.node.bodyList = this.node.body.querySelector('.scr-area')
 
-            window.addEventListener("resize", this.debounce(this.doResizeRender))
+            window.addEventListener("resize", this.$common.debounce(this.doResizeRender))
 
             this.doResizeRender()
         },
@@ -157,7 +157,7 @@
                     this.isLoading = false
                     loader.hide()
 
-                    this.$snotify.error('매출원장 조회 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('매출원장 조회 실패', this.$common.parseErrorMsg(err))
                 })
             },
 

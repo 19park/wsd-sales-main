@@ -175,7 +175,7 @@
                     this.isLoading = false
                     loader.hide()
 
-                    this.$snotify.error('거래처 목록 조회 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('거래처 목록 조회 실패', this.$common.parseErrorMsg(err))
                 })
             }
         },

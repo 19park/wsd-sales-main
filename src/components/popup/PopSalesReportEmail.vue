@@ -204,7 +204,7 @@
                     }
                     loader.hide()
                 }).catch((err) => {
-                    this.$snotify.error('명세서 이메일 발송 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('명세서 이메일 발송 실패', this.$common.parseErrorMsg(err))
                     loader.hide()
                 })
             },
@@ -227,7 +227,7 @@
                 }).then((data) => {
                     this.doSetEmail(data.EMAIL)
                 }).catch((err) => {
-                    this.$snotify.error('거래처 이메일 조회 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('거래처 이메일 조회 실패', this.$common.parseErrorMsg(err))
                 })
             },
 

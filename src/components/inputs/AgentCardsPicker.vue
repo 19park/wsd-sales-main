@@ -10,11 +10,9 @@
 
 <script>
     import {agent} from '../../api/index'
-    import Common from '../mixin/common'
 
     export default {
         name: "AgentCardsPicker",
-        mixins: [Common],
         props: {
             label: String,
             model: Object,
@@ -49,7 +47,10 @@
                     })
                 }
             }).catch((err) => {
-                this.getErrorMsg(err)
+                this.options = [
+                    { value: null, text: '로딩 실패' }
+                ]
+                this.$snotify.error('카드 조회 실패', this.$common.parseErrorMsg(err))
             })
         }
     }

@@ -122,7 +122,7 @@
 
 <script>
     import {mapState} from 'vuex'
-    import {SETTINGS} from '../../api/index'
+    import {SETTINGS, agent, sales} from '../../api/index'
     import Common from '../mixin/common'
 
     export default {
@@ -168,7 +168,7 @@
                 const GET_CUSTOMER_CODE = this.state.model.CUSTOMER_CODE
                 const GET_SALES_DAY = this.state.model.SALES_DAY
                 const GET_SALES_CODE = this.state.model.SALES_CODE
-                const GET_SLIP_YN = this.isPrint
+                const GET_SLIP_YN = this.state.isPrint
 
                 /**
                  * 일괄 인쇄 시 별도 처리
@@ -289,26 +289,34 @@
                         this.doPrintChkSave()
                     }
 
-                    //명세서 출력값이 N이면 Y로 업데이트
-                    if (GET_SLIP_YN === 'N') {
+                    //명세서 출력값이 false 이면 true로 업데이트
+                    if (!GET_SLIP_YN) {
                         this.doSlipUpt()
                     }
                 }
             },
 
             doPrintChkSave () {
-                const _P = this.PRINT_SETTINGS
-                const TYPE = _P.SALES_PRINT_ORDER
-                const DIV1 = _P.SALES_PRINT_PRICE
-                const DIV2 = _P.SALES_PRINT_PPU
-                const DIV3 = _P.STAX_PRINT
-                const DIV4 = _P.SALES_PRINT_BALANCE
-                const DIV5 = _P.SALES_PRINT_REVERSE
-                const DIV6 = _P.SALES_PRINT_BOX_PPU
+                const postData = {
+                    ...this.PRINT_SETTINGS
+                }
+
+                agent.updatePrtOpts(postData).then((data) => data).catch((err) => {
+                    this.$snotify.error('인쇄 옵션 업데이트 실패', this.$common.parseErrorMsg(err))
+                })
             },
 
             doSlipUpt () {
+                const getModel = this.state.model
+                const postData = {
+                    sales_day: getModel.SALES_DAY,
+                    sales_code: getModel.SALES_CODE,
+                    customer_code: getModel.CUSTOMER_CODE
+                }
 
+                sales.patchPrintComp(postData).then((data) => data).catch((err) => {
+                    this.$snotify.error('인쇄 여부 업데이트 실패', this.$common.parseErrorMsg(err))
+                })
             },
 
             // 이메일 발송 팝업
