@@ -48,7 +48,8 @@
                         <tbody class="list-area" id="list-wrap">
                         <tr v-for="item in model.list"
                             :class="{'list-item':(item.TYPE === 'DAILY')}"
-                            :bgcolor="(item.TYPE === 'DAILY')?'':'#BEFFBD'">
+                            :bgcolor="(item.TYPE === 'DAILY')?'':'#BEFFBD'"
+                            @click="doLoadData(item)">
                             <td class="text-left">{{getTypeFormat(item)}}</td>
                             <td>{{formatComma(item.SALES)}}</td>
                             <td>{{formatComma(item.SALES_DISCOUNT)}}</td>
@@ -64,8 +65,8 @@
             </div>
         </b-card-body>
         <b-card-footer id="ledger-footer" ref="ledger-footer">
-            <strong v-if="model.customer.name">
-                거래처명 : {{model.customer.name}}
+            <strong v-if="$salesEntry().model.customer.CUSTOMER_NAME">
+                거래처명 : {{$salesEntry().model.customer.CUSTOMER_NAME}}
             </strong>
             <p v-else>
                 매출목록을 선택해주세요.
@@ -86,9 +87,6 @@
             return {
                 isLoading: false,
                 model: {
-                    customer: {
-                        name: null
-                    },
                     list: []
                 },
                 node: {
@@ -142,9 +140,6 @@
                 this.isLoading = true
                 const loader = this.$common.getLoader(this)
 
-                this.model.customer.name = postData.customer_name
-                delete postData.customer_name
-
                 sales.fetchLedger(postData).then((data) => {
                     this.model.list = data.list
 
@@ -181,6 +176,11 @@
 
             formatComma (n) {
                 return numeral(n).format()
+            },
+
+
+            doLoadData (data) {
+                console.log(data)
             }
         }
     }

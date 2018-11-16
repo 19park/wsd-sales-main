@@ -92,15 +92,15 @@
                             <button @click="doInitData()" class="btn btn-add">
                                 <font-awesome-icon icon="plus-circle"/>&nbsp;신규등록
                             </button>
-                            <button id="btn_del"
-                                    class="btn btn-danger"
-                                    @click="confirmToDelete()">
-                                <font-awesome-icon icon="trash-alt"/>&nbsp;삭제하기
-                            </button>
                             <button id="btn_upt"
                                     class="btn btn-primary"
                                     @click="doSubmit()">
                                 <font-awesome-icon icon="edit"/>&nbsp;수정저장
+                            </button>
+                            <button id="btn_del"
+                                    class="btn btn-danger"
+                                    @click="confirmToDelete()">
+                                <font-awesome-icon icon="trash-alt"/>&nbsp;삭제하기
                             </button>
                             <button id="btn_prt"
                                     class="btn btn-print"
@@ -188,6 +188,24 @@
             </PopSalesReportEmail>
         </b-modal>
 
+
+        <!-- 단가 변동 내역 팝업 //-->
+        <b-modal id="pop-ppu-histories"
+                 :lazy="true"
+                 size="lg"
+                 body-class="p-0"
+                 hide-header
+                 hide-footer>
+            <PopPpuHistories :state="listState" ref="pop-ppu-histories">
+                <template slot="footer">
+                    <button class="btn btn-outline-dark"
+                            @click="$root.$emit('bv::hide::modal','pop-ppu-histories')">닫기
+                    </button>
+                </template>
+            </PopPpuHistories>
+        </b-modal>
+
+
         <!-- 수정 조회 시 거래처 상세 정보 조회 //-->
         <b-modal id="pop-customer-info"
                  header-bg-variant="warning"
@@ -234,7 +252,7 @@
 </template>
 
 <script>
-    import {mapState} from 'vuex'
+    import {mapState, mapGetters} from 'vuex'
     import {sales} from '../api'
     import alert from './mixin/alert'
     import Common from './mixin/common'
@@ -262,6 +280,8 @@
     import PopSalesReport from './popup/PopSalesReport.vue'
     import PopSalesReportEmail from './popup/PopSalesReportEmail.vue'
 
+    import PopPpuHistories from './popup/PopPpuHistories.vue'
+
     export default {
         name: "SalesEntry",
         components: {
@@ -276,7 +296,8 @@
             DatePicker,
 
             PopSalesReport,
-            PopSalesReportEmail
+            PopSalesReportEmail,
+            PopPpuHistories
         },
         mixins: [Common, alert],
         watch: {
@@ -312,6 +333,9 @@
                 'AGENT_NO',
                 'AGENT_SETTINGS',
                 'USER_CODE'
+            ]),
+            ...mapGetters([
+                'getAmountTypeTxt'
             ]),
             getDisableType () {
                 return this.disableType
@@ -362,6 +386,8 @@
                         div: null,
                         type: null
                     },
+                    // 단가변동내역 조회 사용
+                    lastSelectedProduct: {},
                     model: {
                         CUSTOMER_CODE: null,
                         SALES_DAY: null,
@@ -380,8 +406,7 @@
                         CREDIT_BC: 0,
                         CUSTOMER_BC: {},
                         DC_PERCENT: 0,
-                        STAX: null,
-
+                        STAX: null
                     },
                     member: {
                         code: null
@@ -447,10 +472,7 @@
                         85, 170, 120, 70, 70, 70, 80, 90, 70, 90, 90, 90, 60, 100, 50, 80, 80, 50
                     ],
                     // TODO 수량 계란에 따라 판/알 처리
-                    colHeaders: [
-                        '상품추가', '품명(단가이력조회)', '[입수수량]규격', 'BOX수량', 'EA수량', '합계수량',
-                        '단가', '금액', 'DC', '공급가', '부가세', '판매금액', '서비스', '비고', '행사', '거래구분▼', '이익', '삭제'
-                    ],
+                    colHeaders: [],
                     columns: [
                         // bind mounted
                     ],
@@ -477,6 +499,10 @@
                 }
             }
 
+            this.hotOptions.colHeaders = [
+                '상품추가', '품명(단가이력조회)', '[입수수량]규격', ...this.getAmountTypeTxt,
+                '단가', '금액', 'DC', '공급가', '부가세', '판매금액', '서비스', '비고', '행사', '거래구분▼', '이익', '삭제'
+            ]
             this.hotOptions.columns = [
                 {data: 'PRODUCT.VIEW_CODE', type: 'text', readOnly: true},
                 {data: 'PRODUCT.PRODUCT_NAME', type: 'text', readOnly: true},
@@ -582,7 +608,11 @@
                     this.hot.destroy()
                 }
 
-                // GET VUEX DATA
+                /**
+                 * GET VUEX DATA
+                 * TODO 현재는 VUEX에서 가져오지만
+                 * 저장 된 데이터의 구분에 따라 가져오는 처리필요?
+                 */
                 const getState = self.AGENT_SETTINGS
                 const getAmountDiv = (GET_AMT_DIV) ? GET_AMT_DIV : getState.AMOUNT_DIV
 
@@ -749,6 +779,10 @@
                         }
 
                         switch (coords.col) {
+                            case 1:
+                                self.listState.lastSelectedProduct = this.getDataAtRowProp(coords.row, 'PRODUCT')
+                                self.doOpenPpuHistories()
+                                break
                             case 17:
                                 this.alter('remove_row', coords.row)
                                 self.doRenderSummary()
@@ -1525,6 +1559,11 @@
             // 거래처 상세 정보 팝업 오픈
             doOpenCustomerInfo () {
                 this.$root.$emit('bv::show::modal','pop-customer-info')
+            },
+
+            // 단가 변동 내역 조회 팝업 오픈
+            doOpenPpuHistories () {
+                this.$root.$emit('bv::show::modal','pop-ppu-histories')
             },
 
 

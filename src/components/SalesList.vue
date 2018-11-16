@@ -380,7 +380,6 @@
 
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
-                    customer_name: obj.CUSTOMER_NAME,
                     start_day: this.getFormatTime(this.model.startDay),
                     end_day: this.getFormatTime(this.model.endDay)
                 }
@@ -405,7 +404,7 @@
 
             // 매출목록 엑셀저장
             goExcel () {
-
+                console.log('엑셀')
             },
 
             // 매출목록 인쇄
