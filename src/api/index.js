@@ -40,14 +40,13 @@ axios.interceptors.request.use(config => {
 })
 
 
-const request = (method, url, data) => {
-    const dataType = (method === 'get') ? 'params' : 'data'
-    const SEND_URL = (url.match('http'))?url:SETTINGS.DOMAIN + url
-    return axios({
-        method,
-        url: SEND_URL,
-        [dataType]: data
-    }).then(result => result.data)
+const request = (settings) => {
+    const GET_URL = settings.url
+    if (!GET_URL.match('http')) {
+        settings.url = SETTINGS.DOMAIN + GET_URL
+    }
+    return axios(settings)
+        .then(result => result.data)
         .catch(err => {
             if (!_get(err, 'response')) {
                 throw '네트워크 에러'
@@ -62,51 +61,86 @@ const request = (method, url, data) => {
 
 export const agent = {
     fetch () {
-        return request('get', `/api/v6/agents/${store.state.AGENT_RNO}`)
+        return request({
+            method: 'get',
+            url: `/api/v6/agents/${store.state.AGENT_RNO}`
+        })
     },
     fetchBank (data) {
-        return request('get', '/api/v6/agentBanks', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/agentBanks',
+            params: data
+        })
     },
     // 명세서 인쇄 시 변경 되면 가맹점에 업데이트
     updatePrtOpts (data) {
-        return request('put', `/api/v6/agents/${store.state.AGENT_RNO}/prtOpts`, data)
+        return request({
+            method: 'put',
+            url: `/api/v6/agents/${store.state.AGENT_RNO}/prtOpts`,
+            data
+        })
     }
 }
 
 
 export const customer = {
     fetch (data) {
-        return request('get', '/api/v6/customers', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/customers',
+            params: data
+        })
     },
     fetchTypes (data) {
-        return request('get', '/api/v6/customerType1s', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/customerType1s',
+            params: data
+        })
     },
     fetchTarget (data) {
-        return request('get', `/api/v6/customers/${store.state.AGENT_NO}/${data.CODE}`)
+        return request({
+            method: 'get',
+            url: `/api/v6/customers/${store.state.AGENT_NO}/${data.CODE}`
+        })
     }
-    // create(title) {
-    //   return request('post', '/customer', {title})
-    // }
 }
 
 export const member = {
     fetch (data) {
-        return request('get', '/api/v6/agentMembers/all', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/agentMembers/all',
+            params: data
+        })
     }
 }
 
 export const warehouses = {
     fetch (data) {
-        return request('get', '/api/v6/warehouses', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/warehouses',
+            params: data
+        })
     }
 }
 
 export const goods = {
     fetch (data) {
-        return request('get', '/api/v6/salesProducts', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/salesProducts',
+            params: data
+        })
     },
     fetchTypes (data) {
-        return request('get', '/api/v6/productType1s', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/productType1s',
+            params: data
+        })
     }
 }
 
@@ -114,32 +148,77 @@ export const goods = {
 export const sales = {
     // 목록 조회
     fetch (data) {
-        return request('get', '/api/v6/sales', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/sales',
+            params: data
+        })
     },
+
     // 집계 조회
     fetchSummary (data) {
-        return request('get', '/api/v6/sales/summary', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/sales/summary',
+            params: data
+        })
     },
+
     // 원장 조회
     fetchLedger (data) {
-        return request('get', '/api/v6/salesLedger/simple', data)
+        return request({
+            method: 'get',
+            url: '/api/v6/salesLedger/simple',
+            params: data
+        })
     },
+
     // 명세서 이메일 발송
     sendEmail (url) {
-        return request('get', url)
+        return request({
+            method: 'get',
+            url: url
+        })
     },
+
     // 명세서 인쇄 여부 업데이트
     patchPrintComp (data) {
-        return request('patch', `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}/printing`)
+        return request({
+            method: 'patch',
+            url: `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}/printing`
+        })
     },
 
     // 매출 등록
     createSales (data) {
-        return request('post', '/api/v6/sales', data)
+        return request({
+            method: 'post',
+            url: '/api/v6/sales',
+            data
+        })
+    },
+
+    updateSales (obj, data) {
+        return request({
+            method: 'put',
+            url: `/api/v6/sales/${store.state.AGENT_NO}/${obj.sales_day}/${obj.sales_code}/${obj.customer_code}`,
+            data
+        })
+    },
+
+    // 매출 삭제
+    deleteSales (data) {
+        return request({
+            method: 'delete',
+            url: `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}?register_code=${store.state.USER_CODE}`
+        })
     },
 
     // 매출 단일 조회
     fetchData (data) {
-        return request('get', `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}`)
+        return request({
+            method: 'get',
+            url: `/api/v6/sales/${store.state.AGENT_NO}/${data.sales_day}/${data.sales_code}/${data.customer_code}`
+        })
     }
 }
