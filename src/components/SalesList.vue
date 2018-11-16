@@ -189,8 +189,8 @@
     import {sales} from '../api/index'
     import Common from './mixin/common'
     import numeral from 'numeral'
+    import _get from 'lodash/get'
     import _assign from 'lodash/assign'
-    import _findIndex from 'lodash/findIndex'
     import _isEqal from 'lodash/isEqual'
 
     // 조건조회 관련
