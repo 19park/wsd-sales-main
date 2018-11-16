@@ -23,8 +23,8 @@
         <div id="loader-container">
             <ResultTable :hotOptions="hotOptions" @addLoad="doSearch" @rowClick="fnProdClick"/>
         </div>
-        <div class="mt-3">
-            <slot name="footer" v-if="$slots.footer"></slot>
+        <div class="mt-3 text-right" v-if="$slots.footer">
+            <slot name="footer"></slot>
         </div>
     </card>
 </template>

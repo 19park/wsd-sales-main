@@ -12,7 +12,7 @@
                  hide-footer
                  hide-header>
             <PopCustomers @get-data="cbAddCustomers">
-                <div slot="footer" class="text-right">
+                <div slot="footer">
                     <button class="btn btn-outline-dark"
                             @click="$root.$emit('bv::hide::modal',`${defPopName}`)">닫기
                     </button>
