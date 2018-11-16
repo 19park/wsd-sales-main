@@ -42,7 +42,7 @@
                     ]
                 } else {
                     // 유형초기화
-                    this.options = []
+                    this.options = [{ value: null, text: '창고선택' }]
                     data.list.forEach((e, i)=>{
                         if(i===0) this.model.code = e.WAREHOUSE_CODE
                         this.options.push({
