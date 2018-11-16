@@ -143,10 +143,7 @@ const Common = {
                 wPop.moveTo(50, 50)
             }
 
-            const loader = this.$loading.show({
-                container: self.$el,
-                canCancel: false
-            })
+            const loader = self.$common.getLoader(self)
 
             axios.post(url, data, {
                 responseType: 'arraybuffer',

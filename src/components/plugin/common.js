@@ -82,6 +82,14 @@ common.install = function (Vue, options) {
                 element.scrollTop = from + position
                 this.scrollTo(element, from, to, duration, currentTime + 10)
             }, 10)
+        },
+
+        // 로딩 오버레이 리턴
+        getLoader (self) {
+            return self.$loading.show({
+                container: self.$el,
+                canCancel: false
+            })
         }
 
     }

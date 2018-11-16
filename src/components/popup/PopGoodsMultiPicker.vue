@@ -153,12 +153,7 @@
                 if (this.isLoading) return
 
                 this.isLoading = true
-                const loader = this.$loading.show({
-                    // Optional parameters
-                    container: this.$el,
-                    canCancel: false,
-                    // onCancel: this.onCancel,
-                })
+                const loader = this.$common.getLoader(this)
 
                 const postData = this.getPostData
                 goods.fetch(postData).then((data) => {

@@ -192,10 +192,7 @@
                     ACTION_URL += '&is_update_customer_email=true'
                 }
 
-                const loader = this.$loading.show({
-                    container: self.$el,
-                    canCancel: false
-                })
+                const loader = self.$common.getLoader(self)
 
                 sales.sendEmail(ACTION_URL).then((data) => {
                     if (data === 'OK') {

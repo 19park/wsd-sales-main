@@ -177,7 +177,7 @@
 
                 if (this.isBatch) {
                     const GET_REPRINT_YN = this.isRePrint
-                    const GET_LIST_DATA = this.$parent.$parent.listModel.data
+                    const GET_LIST_DATA = this.$salesList().listModel.data
 
                     // 일괄 시 넘길 데이터를 배열로 push 생성
                     GET_LIST_DATA.forEach((e) => {
