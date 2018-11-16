@@ -206,7 +206,12 @@ html, body {
 .handsontable td.htBgSummary {
     background-color: #e0ffff;
     color: #333;
+    font-weight: 600;
 }
+
+.handsontable td.htBgSummary .btn-view .price { display: none; }
+.handsontable td.htBgSummary .btn-view:hover .txt { display:none; }
+.handsontable td.htBgSummary .btn-view:hover .price { display: block; }
 
 .handsontable td.htBgSummary input {
     display: none;
