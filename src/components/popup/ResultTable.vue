@@ -11,7 +11,11 @@
         name: "ResultTable",
         props: {
             hotId: String,
-            hotOptions: Object
+            hotOptions: Object,
+            isLoad: {
+                type: Boolean,
+                default: true
+            }
         },
         data () {
             return {
@@ -24,13 +28,20 @@
             }
         },
         watch: {
-            'hotOptions.data': {
-                handler (val, oldVal) {
-                    this.hot.loadData(val)
-                    if (!this.hotOptions.init && val.length) {
+            'hotOptions': {
+                handler (val) {
+                    this.hot.loadData(val.data)
+                    if (!this.hotOptions.init && val.data.length) {
                         this.hotOptions.init = true
                         this.hot.selectCell(0, 0)
                     }
+
+                    this.hot.updateSettings({
+                        hiddenColumns: {
+                            columns: val.hiddenCols,
+                            indicators: false
+                        }
+                    })
                 },
                 deep: true
             }
@@ -73,6 +84,7 @@
                     this.doSelect(coords.row)
                 },
                 afterScrollVertically: () => {
+                    if (!this.isLoad) { return false }
                     const target = HotTable.querySelector(".wtHolder")
                     if (target.offsetHeight + target.scrollTop >= target.scrollHeight) {
                         // 스크롤 마지막 체크 후 추가로딩

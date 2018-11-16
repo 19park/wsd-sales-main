@@ -173,6 +173,15 @@ export const sales = {
         })
     },
 
+    // 단가 변동 내역 조회
+    fetchPpuHistories (data) {
+        return request({
+            method: 'get',
+            url: '/api/v6/salesPpuHistories',
+            params: data
+        })
+    },
+
     // 명세서 이메일 발송
     sendEmail (url) {
         return request({
