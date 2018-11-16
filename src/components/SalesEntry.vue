@@ -280,6 +280,7 @@
     import PopSalesReport from './popup/PopSalesReport.vue'
     import PopSalesReportEmail from './popup/PopSalesReportEmail.vue'
 
+    // 단가 이력 조회 팝업
     import PopPpuHistories from './popup/PopPpuHistories.vue'
 
     export default {
@@ -303,9 +304,15 @@
         watch: {
             // 거래처 선택했을 때 담당사원 코드 바인딩
             'model.customer': {
-                handler (val) {
-                    if (!this.listState.isModify) {
+                handler (val, oldVal) {
+                    if (!this.listState.isModify ||
+                        (!val.REG_NO &&
+                        !val.REG_NO !== oldVal.REG_NO)) {
                         if (this.hot) {
+                            // console.log('watch :', val, oldVal)
+                            // 복사저장 때문에 바뀌었으면 중단
+                            if (this.$salesList().copyModel.CUSTOMER_CODE) { return }
+
                             this.model.member.code = val.MEMBER_CODE
                             this.$refs['select-warehouse'].$el.children[1].focus()
 
@@ -315,7 +322,7 @@
                         } else {
                             this.showAlertToExit(
                                 '오류',
-                                'table 플러그인을 제대로 불러오지 못했습니다.<br/>페이지를 새로고침합니다.',
+                                '플러그인을 제대로 불러오지 못했습니다.<br/>페이지를 새로고침합니다.',
                                 () => {
                                     this.$router.go(0)
                                 })
@@ -641,7 +648,7 @@
                     arrHiddenCols.push(9, 10)
                 }
 
-                let initData = (GET_DATA)?GET_DATA:[]
+                let initData = (GET_DATA) ? GET_DATA : []
                 const emptyData = _cloneDeep(self.hotOptions.salesMainSchema)
                 const summaryData = _cloneDeep(self.hotOptions.salesMainSchema)
                 emptyData.IS_EMPTY = true
@@ -652,6 +659,7 @@
                 initData.push(emptyData)
                 initData.push(summaryData)
 
+                // console.log('initdata: ', initData)
                 this.hot = new Handsontable(HotTable, {
                     data: initData,
                     dataSchema: self.hotOptions.salesMainSchema,
@@ -1572,11 +1580,12 @@
              * 목록에서 ROW를 클릭 후 해당 전표 단일 조회
              * @param data (클릭한 ROW의 DATA)
              */
-            getSalesData (data) {
+            getSalesData (data, cdata) {
                 const loader = this.$common.getLoader(this)
 
                 sales.fetchData(data).then(res => {
                     const _M = this.model
+                    const _CUSTOMER = (cdata) ? cdata : res.CUSTOMER
 
                     let _NEW_DATA
                     _M.salesDay = res.SALES_DAY
@@ -1584,9 +1593,9 @@
                     _M.warehouse.code = res.WAREHOUSE.WAREHOUSE_CODE
                     _M.comment = res.SALES_COMMENT
 
-                    _NEW_DATA = this.doParseSalesData(res.CUSTOMER, res.SALES_ITEMS)
+                    _NEW_DATA = this.doParseSalesData(_CUSTOMER, res.SALES_ITEMS)
                     _assign(_M.collect, this.doParseCollectData(res.COLLECT_ITEM))
-                    _assign(_M.customer, res.CUSTOMER)
+                    _assign(_M.customer, _CUSTOMER)
 
                     this.doCreateTable(false, _NEW_DATA)
                     loader.hide()
@@ -1595,6 +1604,16 @@
                         if (this.listState.isSaveToPrint) {
                             this.doOpenSalesReport()
                             this.listState.isSaveToPrint = false
+                        }
+
+
+
+
+                        // 복사저장 상태 초기화
+                        if (cdata) {
+                            this.$salesList().copyModel.CUSTOMER_CODE = null
+                            this.$salesList().copyModel.SALES_CODE = null
+                            this.$salesList().copyModel.SALES_DAY = null
                         }
                     })
                 }).catch((err) => {
@@ -2000,13 +2019,22 @@
                 })
             },
 
-            // 신규등록 혹은 등록 상태 초기화
-            doInitData () {
+            /**
+             * 신규등록 혹은 등록 상태 초기화
+             * @param data (복사저장 시 초기화 후 불러오기 위함)
+             * @param cdata (복사저장 시 거래처 정보 전달)
+             */
+            doInitData (data, cdata) {
                 _assign(this.listState, _cloneDeep(this.initModel.listState))
                 _assign(this.model, _cloneDeep(this.initModel.model))
 
                 this.$salesLedger().model.list = []
-                this.doCreateTable()
+
+                if (data) {
+                    this.getSalesData(data, cdata)
+                } else {
+                    this.doCreateTable()
+                }
             }
 
         }

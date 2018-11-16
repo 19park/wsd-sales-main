@@ -84,8 +84,7 @@
                             <td>
                                 <a href="javascript:void(0)"
                                    class="btn btn-sm btn-black"
-
-                                   @click="doSalesCopy()">복사저장</a>
+                                   @click.stop="doSalesCopy(item)">복사저장</a>
                             </td>
                             <td align="left" class="elip">
                                 {{
@@ -164,6 +163,25 @@
                 </div>
             </div>
         </b-card-footer>
+
+
+        <!-- 복사저장 팝업 //-->
+        <b-modal id="pop-sales-copy"
+                 :lazy="true"
+                 size="lg"
+                 body-class="p-0"
+                 hide-footer
+                 hide-header>
+            <PopSalesCopy :model="copyModel" @get-data="doSalesCopyApp">
+                <div slot="footer">
+                    <button class="btn btn-outline-dark"
+                            @click="$root.$emit('bv::hide::modal', 'pop-sales-copy')">닫기
+                    </button>
+                </div>
+            </PopSalesCopy>
+        </b-modal>
+
+
     </b-card>
 </template>
 
@@ -182,8 +200,8 @@
     import VuejsPaginate from 'vuejs-paginate'
     import DatePicker from './inputs/DatePicker.vue'
 
-    // 명세서인쇄 팝업
-    import PopSalesReport from './popup/PopSalesReport.vue'
+    // 복사저장 팝업
+    import PopSalesCopy from './popup/PopSalesCopy.vue'
 
     export default {
         name: "SalesList",
@@ -194,7 +212,7 @@
             EmployeePicker,
             'paginate': VuejsPaginate,
 
-            PopSalesReport
+            PopSalesCopy
         },
         data () {
             return {
@@ -209,6 +227,12 @@
                     member: {
                         code: null
                     }
+                },
+                copyModel: {
+                    COPY_DAY: this.getFullCurrentDate(),
+                    CUSTOMER_CODE: null,
+                    SALES_DAY: null,
+                    SALES_CODE: null
                 },
                 listModel: {
                     page: 1,
@@ -378,7 +402,7 @@
                 getSalesEntry.listState.isModify = true
 
                 // 명세서 출력여부 세팅
-                getSalesEntry.listState.isPrint = (obj.SLIP_YN) ? obj.SLIP_YN : true
+                getSalesEntry.listState.isPrint = _get(obj, 'SLIP_YN', true)
 
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
@@ -422,6 +446,39 @@
                     return
                 }
                 this.$root.$emit('bv::show::modal', 'pop-sales-batch-report')
+            },
+
+            // 매출 복사 저장 팝업 설정
+            doSalesCopy (obj) {
+                this.copyModel.SALES_CODE = obj.SALES_CODE
+                this.copyModel.SALES_DAY = obj.SALES_DAY
+                this.copyModel.CUSTOMER_CODE = obj.CUSTOMER_CODE
+
+                this.$root.$emit('bv::show::modal','pop-sales-copy')
+            },
+
+            // 매출 복사 저장
+            doSalesCopyApp (cdata) {
+                this.$root.$emit('bv::hide::modal','pop-sales-copy')
+
+                const getCopyModel = this.copyModel
+                const postData = {
+                    sales_day: getCopyModel.SALES_DAY,
+                    sales_code: getCopyModel.SALES_CODE,
+                    customer_code: getCopyModel.CUSTOMER_CODE
+                }
+
+                // 매출 단일 조회
+                this.$salesEntry().doInitData(postData, cdata)
+
+                const postLedgerData = {
+                    customer_code: cdata.CUSTOMER_CODE,
+                    start_day: this.getFormatTime(new Date().setFullYear(new Date().getFullYear() - 1)),
+                    end_day: this.getFormatTime(new Date())
+                }
+
+                // 매출 원장 조회
+                this.$salesLedger().getSalesLedger(postLedgerData)
             }
         }
     }
