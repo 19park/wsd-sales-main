@@ -51,7 +51,7 @@ const alert = {
          */
         showAlertToUpdate (positiveCallback) {
             this.showAlertToQuestion('question', // 질의
-                '확인', // 수정 확인 메시지
+                '수정하시겠습니까?', // 수정 확인 메시지
                 null,
                 '수정', // 수정 버튼
                 positiveCallback, // 수정 이벤트 핸들러
@@ -63,7 +63,7 @@ const alert = {
          */
         showAlertToDelete (positiveCallback) {
             this.showAlertToQuestion('question', // 질의
-                '확인', // 삭제 확인 메시지
+                '삭제하시겠습니까?', // 삭제 확인 메시지
                 null,
                 '삭제', // 삭제 버튼
                 positiveCallback, // 삭제 이벤트 핸들러

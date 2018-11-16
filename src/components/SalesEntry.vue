@@ -15,6 +15,7 @@
                                     wrap-classes="d-inline-block"/>
 
                         <CustomerPicker :model="model.customer"
+                                        :isHotChk="true"
                                         wrap-classes="d-inline-block ml-2"/>
                         <EmployeePicker :model="model.member"
                                         ref="select-member"
@@ -71,7 +72,7 @@
                 <tr>
                     <th width="10%" class="b1">매출메모</th>
                     <td width="40%">
-                        <input type="text" name="SALES_COMMENT" class="form-control input-l">
+                        <input type="text" name="SALES_COMMENT" class="form-control input-l" v-model="model.comment">
                     </td>
                     <td width="50%">
                         <div class="clearfix" v-if="!listState.isModify">
@@ -82,21 +83,23 @@
                                     class="btn btn-print">저장 후 명세서 인쇄
                             </button>
 
-                            <button @click="$router.go(0)" class="btn btn-add">
+                            <button @click="doInitData()" class="btn btn-add">
                                 <font-awesome-icon icon="plus-circle"/>&nbsp;새로등록
                             </button>
                         </div>
                         <div class="clearfix" v-else>
                             <!-- TODO 초기화 또는 리로딩으로 신규처리 추가 //-->
-                            <button @click="$router.go(0)" class="btn btn-add">
+                            <button @click="doInitData()" class="btn btn-add">
                                 <font-awesome-icon icon="plus-circle"/>&nbsp;신규등록
                             </button>
                             <button id="btn_del"
-                                    class="btn btn-danger">
+                                    class="btn btn-danger"
+                                    @click="confirmToDelete()">
                                 <font-awesome-icon icon="trash-alt"/>&nbsp;삭제하기
                             </button>
                             <button id="btn_upt"
-                                    class="btn btn-primary">
+                                    class="btn btn-primary"
+                                    @click="doSubmit()">
                                 <font-awesome-icon icon="edit"/>&nbsp;수정저장
                             </button>
                             <button id="btn_prt"
@@ -104,7 +107,7 @@
                                     @click="doOpenSalesReport()">거래명세서 인쇄
                             </button>
 
-                            <button id="btn_info" class="float-right">
+                            <button id="btn_info" class="float-right" @click="doOpenCustomerInfo()">
                                 <font-awesome-icon icon="info-circle"/>
                             </button>
                         </div>
@@ -153,6 +156,23 @@
         </b-modal>
 
 
+        <!-- 명세표 일괄 인쇄 팝업 //-->
+        <b-modal id="pop-sales-batch-report"
+                 :lazy="true"
+                 size="md"
+                 body-class="p-0"
+                 hide-header
+                 hide-footer>
+            <PopSalesReport :state="listState" :isBatch="true">
+                <template slot="footer">
+                    <button class="btn btn-outline-dark"
+                            @click="$root.$emit('bv::hide::modal','pop-sales-batch-report')">닫기
+                    </button>
+                </template>
+            </PopSalesReport>
+        </b-modal>
+
+
         <!-- 명세표 이메일발송 팝업 //-->
         <b-modal id="pop-send-email"
                  :lazy="true"
@@ -168,19 +188,61 @@
             </PopSalesReportEmail>
         </b-modal>
 
+        <!-- 수정 조회 시 거래처 상세 정보 조회 //-->
+        <b-modal id="pop-customer-info"
+                 header-bg-variant="warning"
+                 header-text-variant="dark"
+                 body-class="p-0">
+            <div slot="modal-header">
+                <strong class="modal-title">거래처 상세 정보</strong>
+            </div>
+            <b-container fluid class="py-3">
+                <b-row class="mb-2">
+                    <b-col cols="3">휴대폰 : </b-col>
+                    <b-col>{{model.customer.PHONE}}</b-col>
+                </b-row>
+                <b-row class="mb-2">
+                    <b-col cols="3">전화번호 : </b-col>
+                    <b-col>{{model.customer.TEL}}</b-col>
+                </b-row>
+                <b-row class="mb-2">
+                    <b-col cols="3">팩스 : </b-col>
+                    <b-col>{{model.customer.FAX}}</b-col>
+                </b-row>
+                <b-row class="mb-2">
+                    <b-col cols="3">비고1 : </b-col>
+                    <b-col>{{model.customer.COMMENT1}}</b-col>
+                </b-row>
+                <b-row class="mb-2">
+                    <b-col cols="3">비고2 : </b-col>
+                    <b-col>{{model.customer.COMMENT2}}</b-col>
+                </b-row>
+                <b-row class="mb-2">
+                    <b-col cols="3">비고3 : </b-col>
+                    <b-col>{{model.customer.COMMENT3}}</b-col>
+                </b-row>
+            </b-container>
+            <div slot="modal-footer" class="w-100">
+                <b-btn class="float-right" variant="outline-dark" @click="$root.$emit('bv::hide::modal','pop-customer-info')">
+                    닫기
+                </b-btn>
+            </div>
+        </b-modal>
+
 
     </div>
 </template>
 
 <script>
     import {mapState} from 'vuex'
+    import {sales} from '../api'
     import alert from './mixin/alert'
     import Common from './mixin/common'
 
     import Handsontable from 'handsontable-pro'
     import numeral from 'numeral'
     import _get from 'lodash/get'
-    import _merge from 'lodash/merge'
+    import _assign from 'lodash/assign'
     import _cloneDeep from 'lodash/cloneDeep'
 
     // 조건조회 관련
@@ -220,26 +282,27 @@
         watch: {
             // 거래처 선택했을 때 담당사원 코드 바인딩
             'model.customer': {
-                handler (val, oldVal) {
-                    // handsontable 공급가, 세액 뷰처리
-                    if (this.hot) {
-                        this.model.member.code = val.MEMBER_CODE
-                        this.$refs['select-warehouse'].$el.children[1].focus()
+                handler (val) {
+                    if (!this.listState.isModify) {
+                        if (this.hot) {
+                            this.model.member.code = val.MEMBER_CODE
+                            this.$refs['select-warehouse'].$el.children[1].focus()
 
-                        this.$nextTick(() => {
-                            this.fnCreateTable()
-                        })
-                    } else {
-                        this.showAlertToExit(
-                            '오류',
-                            'table 플러그인을 제대로 불러오지 못했습니다.<br/>페이지를 새로고침합니다.',
-                            () => {
-                                this.$router.go(0)
+                            this.$nextTick(() => {
+                                this.doCreateTable()
                             })
-                    }
+                        } else {
+                            this.showAlertToExit(
+                                '오류',
+                                'table 플러그인을 제대로 불러오지 못했습니다.<br/>페이지를 새로고침합니다.',
+                                () => {
+                                    this.$router.go(0)
+                                })
+                        }
 
-                    // 계좌 키 바인딩
-                    this.model.collect.bank.REG_NO = val.BANK_INFO
+                        // 계좌 키 바인딩
+                        this.model.collect.bank.REG_NO = val.BANK_INFO
+                    }
                 },
                 deep: true
             }
@@ -247,7 +310,8 @@
         computed: {
             ...mapState([
                 'AGENT_NO',
-                'AGENT_SETTINGS'
+                'AGENT_SETTINGS',
+                'USER_CODE'
             ]),
             getDisableType () {
                 return this.disableType
@@ -271,6 +335,7 @@
         data () {
             return {
                 hot: null,
+
                 // resize variables
                 resizeHandle: null,
                 entryContainer: null,
@@ -280,12 +345,19 @@
                 isGoodsPopDup: false,
                 // 매출일자 권한별 렌더링구분
                 disableType: '',
+                // 작성상태 초기화 clone object
+                initModel: {
+                    listState: {},
+                    model: {}
+                },
 
                 listState: {
                     // 수정상태 구분
                     isModify: false,
                     // 명세서 출력 여부
                     isPrint: false,
+                    // 저장 후 인쇄 여부
+                    isSaveToPrint: false,
                     report: {
                         div: null,
                         type: null
@@ -305,13 +377,11 @@
                         CUSTOMER_NAME: null,
                         MEMBER_CODE: null,
                         BANK_INFO: null,
-                        BILL_PERCENT: 100,
-                        BILL_TRANSFER: "N",
-                        COLLECT_DAY: 0,
                         CREDIT_BC: 0,
-                        CUSTOMER_BC: 0,
+                        CUSTOMER_BC: {},
                         DC_PERCENT: 0,
-                        STAX: null
+                        STAX: null,
+
                     },
                     member: {
                         code: null
@@ -324,9 +394,6 @@
                         bank: {
                             REG_NO: null
                         },
-                        card: {
-                            REG_NO: null
-                        },
                         memo: null,
                         price: {
                             value: 0,
@@ -334,8 +401,8 @@
                             total: 0
                         }
                     },
+                    comment: null,
                     salesTotalPrice: 0, // 작성중인 화면의 누적 합계금액
-                    salesMainItemList: []
                 },
                 hotOptions: {
                     // TODO 재고 저장 필요
@@ -361,7 +428,7 @@
                         PURCHASE_PPU: null,
                         SALES_PPU: null,
                         BEFORE_PPU: null,
-                        MM_PPU: null,
+                        // MM_PPU: null,
 
                         PURCHASE_PRICE: null,
                         SALES_PRICE: null,
@@ -377,7 +444,7 @@
                         MEMO: null
                     },
                     colWidths: [
-                        85, 170, 120, 70, 70, 70, 80, 90, 70, 90, 90, 90, 60, 100, 40, 80, 80, 50
+                        85, 170, 120, 70, 70, 70, 80, 90, 70, 90, 90, 90, 60, 100, 50, 80, 80, 50
                     ],
                     // TODO 수량 계란에 따라 판/알 처리
                     colHeaders: [
@@ -465,9 +532,16 @@
                 {type: 'text'},
             ]
 
+            // 불량반품 사용 시 매출구분 옵션 불량반품 추가
+            if (getState.RETURN_DIV === '0') {
+                this.hotOptions.salesDivOption.push('불량반품')
+            }
+
             // this.node.table = document.getElementById('hot-table')
             this.node.table = this.$refs.hot
-            this.fnCreateTable()
+            this.initModel.listState = _cloneDeep(this.listState)
+            this.initModel.model = _cloneDeep(this.model)
+            this.doCreateTable()
         },
         methods: {
             /**
@@ -499,7 +573,7 @@
             /**
              * hot 인스턴스 생성
              */
-            fnCreateTable (GET_AMT_DIV) {
+            doCreateTable (GET_AMT_DIV, GET_DATA) {
                 const self = this
                 const HotTable = self.node.table
 
@@ -507,7 +581,6 @@
                 if (this.hot) {
                     this.hot.destroy()
                 }
-                this.model.salesMainItemList = []
 
                 // GET VUEX DATA
                 const getState = self.AGENT_SETTINGS
@@ -541,17 +614,13 @@
                     arrHiddenCols.push(9, 10)
                 }
 
-                // 불량반품 사용 시 매출구분 옵션 불량반품 추가
-                if (getState.RETURN_DIV === '0') {
-                    this.hotOptions.salesDivOption.push('불량반품')
-                }
-
-
-                let initData = []
+                let initData = (GET_DATA)?GET_DATA:[]
                 const emptyData = _cloneDeep(self.hotOptions.salesMainSchema)
                 const summaryData = _cloneDeep(self.hotOptions.salesMainSchema)
                 emptyData.IS_EMPTY = true
                 summaryData.IS_SUMMARY = true
+                summaryData.PROFIT_PRICE = 0
+                summaryData.PROFIT_PERCENT = 0
 
                 initData.push(emptyData)
                 initData.push(summaryData)
@@ -582,96 +651,107 @@
                     },
                     afterScrollVertically: () => {
                         // FIXME 스크롤 시 X 버튼이 렌더링안돼서 디바운싱렌더처리
-                        this.debounce(this.hot.render())
+                        this.$common.debounce(this.hot.render())
                     },
                     afterOnCellMouseOver: function (e, coords) {
-                        if (_get(self.model, 'salesMainItemList').length >= 3 && coords.col === 16) {
+                        if (self.hot && self.hot.countRows() >= 3) {
                             const r = coords.row
                             const getState = self.AGENT_SETTINGS
-
-                            const GET_ROW_CHECK = this.getDataAtRowProp(r, 'SALES_DIV')
-                            if (!GET_ROW_CHECK) return
-                            const GET_LAYER = document.querySelector('.profitLayer')
-                            if (GET_LAYER) return
-
                             let MAKE_TOOLTIP = ''
-                            const GET_PROFIT_PRICE = parseFloat(this.getDataAtRowProp(r, 'PROFIT_PRICE'))
-                            const GET_TOTAL_PRICE = parseFloat(this.getDataAtRowProp(r, 'TOTAL_PRICE'))
-                            const GET_PURCHASE_PRICE = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PRICE'))
-                            const GET_PURCHASE_PPU = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PPU'))
-                            const GET_BOX_GET_AMT = parseFloat(this.getDataAtRowProp(r, 'PRODUCT.BOX_GET_AMOUNT'))
-                            let SET_PROFIT_PER = (GET_TOTAL_PRICE === 0) ?
-                                0 : (GET_PROFIT_PRICE / Math.abs(GET_TOTAL_PRICE)) * 100
 
-                            MAKE_TOOLTIP = `매입단가 : ${numeral(GET_PURCHASE_PPU).format()}<br/>`
-                            if (getState.AMOUNT_DIV === '2') {
-                                MAKE_TOOLTIP += `매입박스단가: ${numeral(GET_PURCHASE_PPU * GET_BOX_GET_AMT).format()}<br/>`
+                            if (this.getDataAtRowProp(r, 'IS_SUMMARY')) {
+
+                            } else {
+                                // 일반 상품 ROW 면 이익 오버 처리
+                                if (coords.col === 16) {
+                                    const GET_ROW_CHECK = this.getDataAtRowProp(r, 'SALES_DIV')
+                                    if (!GET_ROW_CHECK) return
+                                    const GET_LAYER = document.querySelector('.profitLayer')
+                                    if (GET_LAYER) return
+
+                                    const GET_PROFIT_PRICE = parseFloat(this.getDataAtRowProp(r, 'PROFIT_PRICE'))
+                                    const GET_TOTAL_PRICE = parseFloat(this.getDataAtRowProp(r, 'TOTAL_PRICE'))
+                                    const GET_PURCHASE_PPU = parseFloat(this.getDataAtRowProp(r, 'PURCHASE_PPU'))
+                                    const GET_BOX_GET_AMT = parseFloat(this.getDataAtRowProp(r, 'PRODUCT.BOX_GET_AMOUNT'))
+                                    let SET_PROFIT_PER = (GET_TOTAL_PRICE === 0) ?
+                                        0 : (GET_PROFIT_PRICE / Math.abs(GET_TOTAL_PRICE)) * 100
+
+                                    let EL_LAYER = document.createElement('div')
+                                    EL_LAYER.classList.add("view-box")
+                                    let SET_PROFIT_LAYER = document.createElement('div')
+                                    SET_PROFIT_LAYER.className = 'profitLayer'
+
+                                    const GET_WIDTH = window.innerWidth
+                                    const GET_HEIGHT = window.innerHeight
+                                    let SET_DEFAULT_WIDTH = 100
+                                    let SET_DEFAULT_HEIGHT = 85
+
+                                    // 레이어가 나타날 위치를 셋팅한다.
+                                    let SET_POS_X = e.clientX - (SET_DEFAULT_WIDTH * 2)
+                                    let SET_POS_Y = e.clientY + 5
+
+                                    // 레이어가 화면 크기를 벗어나면 위치를 바꾸어 배치한다.
+                                    if (SET_POS_X + SET_DEFAULT_WIDTH > GET_WIDTH) {
+                                        SET_POS_X -= SET_DEFAULT_WIDTH
+                                    }
+                                    if (SET_POS_Y + SET_DEFAULT_HEIGHT > GET_HEIGHT) {
+                                        SET_POS_Y -= SET_DEFAULT_HEIGHT
+                                    }
+
+                                    // 상단기준점(0,0) 밖으로 벗어난다면 상단기준점(0,0)에 배치
+                                    if (SET_POS_X < 0) {
+                                        SET_POS_X = 0
+                                    }
+                                    if (SET_POS_Y < 0) {
+                                        SET_POS_Y = 0
+                                    }
+
+                                    const SET_STYLE_OBJ = {
+                                        top: `${SET_POS_Y}px`,
+                                        left: `${SET_POS_X + 30}px`,
+                                        display: 'block'
+                                    }
+
+                                    for (let p in SET_STYLE_OBJ)
+                                        SET_PROFIT_LAYER.style[p] = SET_STYLE_OBJ[p]
+
+
+                                    MAKE_TOOLTIP = `매입단가 : ${numeral(GET_PURCHASE_PPU).format()}<br/>`
+                                    if (getState.AMOUNT_DIV === '2') {
+                                        MAKE_TOOLTIP += `매입박스단가: ${numeral(GET_PURCHASE_PPU * GET_BOX_GET_AMT).format()}<br/>`
+                                    }
+                                    MAKE_TOOLTIP += `이익금: ${numeral(GET_PROFIT_PRICE).format()}<br/>`
+                                        + `이익율 : ${numeral(SET_PROFIT_PER).format('0,0.00')}%`
+
+                                    EL_LAYER.innerHTML = MAKE_TOOLTIP
+
+                                    SET_PROFIT_LAYER.appendChild(EL_LAYER)
+                                    document.querySelector('body').appendChild(SET_PROFIT_LAYER)
+                                }
                             }
-                            MAKE_TOOLTIP += `이익금: ${numeral(GET_PROFIT_PRICE).format()}<br/>`
-                                + `이익율 : ${numeral(SET_PROFIT_PER).format()}%`
-
-                            let EL_LAYER = document.createElement('div')
-                            EL_LAYER.classList.add("view-box")
-                            EL_LAYER.innerHTML = MAKE_TOOLTIP
-
-                            const GET_WIDTH = window.innerWidth
-                            const GET_HEIGHT = window.innerHeight
-                            let SET_DEFAULT_WIDTH = 100
-                            let SET_DEFAULT_HEIGHT = 85
-
-                            // 레이어가 나타날 위치를 셋팅한다.
-                            let SET_POS_X = e.clientX - (SET_DEFAULT_WIDTH * 2)
-                            let SET_POS_Y = e.clientY + 5
-
-                            // 레이어가 화면 크기를 벗어나면 위치를 바꾸어 배치한다.
-                            if (SET_POS_X + SET_DEFAULT_WIDTH > GET_WIDTH) {
-                                SET_POS_X -= SET_DEFAULT_WIDTH
-                            }
-                            if (SET_POS_Y + SET_DEFAULT_HEIGHT > GET_HEIGHT) {
-                                SET_POS_Y -= SET_DEFAULT_HEIGHT
-                            }
-
-                            // 상단기준점(0,0) 밖으로 벗어난다면 상단기준점(0,0)에 배치
-                            if (SET_POS_X < 0) {
-                                SET_POS_X = 0
-                            }
-                            if (SET_POS_Y < 0) {
-                                SET_POS_Y = 0
-                            }
-
-                            let SET_PROFIT_LAYER = document.createElement('div')
-                            SET_PROFIT_LAYER.appendChild(EL_LAYER)
-                            SET_PROFIT_LAYER.className = 'profitLayer'
-
-                            const SET_STYLE_OBJ = {
-                                top: `${SET_POS_Y}px`,
-                                left: `${SET_POS_X + 30}px`,
-                                display: 'block'
-                            }
-
-                            for (let p in SET_STYLE_OBJ)
-                                SET_PROFIT_LAYER.style[p] = SET_STYLE_OBJ[p]
-
-                            document.querySelector('body').appendChild(SET_PROFIT_LAYER)
                         }
                     },
                     afterOnCellMouseOut: function (e, coords) {
-                        if (_get(self.model, 'salesMainItemList').length >= 3 && coords.col === 16) {
-                            const GET_LAYER = document.querySelector('.profitLayer')
-                            if (GET_LAYER) {
-                                self.removeElement(GET_LAYER)
+                        if (self.hot && self.hot.countRows() >= 3) {
+                            if (coords.col === 16) {
+                                const GET_LAYER = document.querySelector('.profitLayer')
+
+                                if (GET_LAYER) {
+                                    self.$common.removeElement(GET_LAYER)
+                                }
                             }
                         }
                     },
                     afterOnCellMouseDown: function (e, coords) {
-                        if (this.getDataAtRowProp(coords.row, 'IS_EMPTY')) {
+                        if (this.getDataAtRowProp(coords.row, 'IS_EMPTY') ||
+                            this.getDataAtRowProp(coords.row, 'IS_SUMMARY')) {
                             return false
                         }
 
                         switch (coords.col) {
                             case 17:
                                 this.alter('remove_row', coords.row)
-                                self.model.salesMainItemList.splice(coords.row, 1)
+                                self.doRenderSummary()
                                 break
                         }
                     },
@@ -722,10 +802,11 @@
                 })
 
                 // TODO 라이센스 문구 제거
-                // this.removeElement('hot-display-license-info')
+                // this.$common.removeElement('hot-display-license-info')
                 this.addResizeSetting()
+                this.doRenderSummary()
 
-                window.addEventListener("resize", this.debounce(() => {
+                window.addEventListener("resize", this.$common.debounce(() => {
                     this.hot.render()
                 }))
             },
@@ -775,9 +856,30 @@
                         ) {
                             Handsontable.renderers.NumericRenderer.apply(this, arguments)
                         } else {
-                            switch (prop) {
-                                case 'PRODUCT.PRODUCT_NAME':
+                            switch (col) {
+                                case 1:
                                     td.innerHTML = '합계'
+                                    break
+                                case 14:
+                                    td.innerHTML = '이익금'
+                                    break
+                                case 15:
+                                    td.classList.add('htViewRow')
+                                    td.innerHTML = `
+                                        <div class="btn-view">
+                                            <span class="txt">합계보기</span>
+                                            <span class="price">${numeral(HOT.getDataAtRowProp(row, 'PROFIT_PRICE')).format()}</span>
+                                        </div>
+                                    `
+                                    break
+                                case 16:
+                                    td.classList.add('htViewRow')
+                                    td.innerHTML = `
+                                        <div class="btn-view">
+                                            <span class="txt">이익율</span>
+                                            <span class="price">${numeral(HOT.getDataAtRowProp(row, 'PROFIT_PERCENT')).format('0,0.00')}%</span>
+                                        </div>
+                                    `
                                     break
                                 default:
                                     Handsontable.cellTypes[cellProperties.type].renderer.apply(this, arguments)
@@ -790,7 +892,7 @@
                         case 1:
                             cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
                                 Handsontable.renderers.TextRenderer.apply(this, arguments)
-                                if (instance.getDataAtRowProp(row, 'HISTORY')) {
+                                if (!instance.getDataAtRowProp(row, 'HISTORY')) {
                                     let iconElement = document.createElement('SPAN')
                                     iconElement.innerText = 'NEW'
                                     iconElement.classList.add("icon-new")
@@ -827,7 +929,7 @@
                                 if (parseFloat(instance.getDataAtRowProp(row, 'PROFIT_PRICE')) < 0){
                                     addClassTxt += ' m'
                                 }
-                                td.innerHTML = `<div class="${addClassTxt}">&nbsp;&nbsp;보기&nbsp;&nbsp;</div>`
+                                td.innerHTML = `<div class="${addClassTxt}">보기</div>`
                             }
                             break
                         case 17:
@@ -932,7 +1034,7 @@
                 let SET_PROFIT_PER = (SET_TOT_PRICE === 0) ?
                     0 : (SET_PROFIT_PRICE / Math.abs(SET_TOT_PRICE)) * 100
 
-                return {
+                const retObj = {
                     IS_EMPTY: false, // 테이블 하단 빈객체 구분 값
                     HISTORY: data.HISTORY,
                     SALES_DIV: '매출',
@@ -962,6 +1064,7 @@
 
                     MEMO: ''
                 }
+                return retObj
             },
 
             cbAddGoods (arr) {
@@ -975,9 +1078,6 @@
                 // GET TABLE DATA
                 const getTableData = HOT.getSourceData()
 
-                // 합계와 빈줄 제거
-                // _remove(getTableData, (e)=> e.IS_EMPTY || e.IS_SUMMARY)
-
                 let makeNewData
                 if (getTableData.length) {
                     // 선택한 위치를 기준으로 선택한 상품들 끼워넣기
@@ -987,17 +1087,7 @@
                     makeNewData = makeArr
                 }
 
-                // TODO VUE DATA에 리스트를 저장해야하나?
-                this.model.salesMainItemList = _cloneDeep(makeNewData)
-
                 this.$nextTick(() => {
-                    // 항상 맨아래 1줄 노출을위해 빈 객체 push
-                    // let emptyData = _cloneDeep(this.hotOptions.salesMainSchema)
-                    // emptyData.IS_EMPTY = true
-                    // makeNewData.push(emptyData)
-
-                    // 데이터 로드 후 렌더링
-                    // HOT.loadData(makeNewData)
                     HOT.updateSettings({
                         cells: this.doCellRenderer
                     })
@@ -1005,7 +1095,6 @@
 
                     // BOX 수량으로 포커싱
                     HOT.selectCell(this.selectedRowIndex, 3)
-
 
                     // 합계 계산
                     this.doRenderSummary()
@@ -1028,9 +1117,10 @@
                     SUPPLY_PRICE: 0,
                     TAX_PRICE: 0,
                     TOTAL_PRICE: 0,
+                    PROFIT_PRICE: 0,
                     SERVICE_AMOUNT: 0
                 }
-                HOT_DATA.forEach((e, r) => {
+                HOT_DATA.forEach((e) => {
                     // 합계와 빈줄이 아닐때만 반복
                     if (!e.IS_SUMMARY && !e.IS_EMPTY) {
                         if (e.SALES_DIV === '매출') {
@@ -1042,6 +1132,7 @@
                             TOTAL_SUMMARY.SUPPLY_PRICE += e.SUPPLY_PRICE
                             TOTAL_SUMMARY.TAX_PRICE += e.TAX_PRICE
                             TOTAL_SUMMARY.TOTAL_PRICE += e.TOTAL_PRICE
+                            TOTAL_SUMMARY.PROFIT_PRICE += e.PROFIT_PRICE
                             TOTAL_SUMMARY.SERVICE_AMOUNT += e.SERVICE_AMOUNT
                         } else {
                             TOTAL_SUMMARY.BOX_AMOUNT -= e.BOX_AMOUNT
@@ -1052,6 +1143,7 @@
                             TOTAL_SUMMARY.SUPPLY_PRICE -= e.SUPPLY_PRICE
                             TOTAL_SUMMARY.TAX_PRICE -= e.TAX_PRICE
                             TOTAL_SUMMARY.TOTAL_PRICE -= e.TOTAL_PRICE
+                            TOTAL_SUMMARY.PROFIT_PRICE -= e.PROFIT_PRICE
                             TOTAL_SUMMARY.SERVICE_AMOUNT -= e.SERVICE_AMOUNT
                         }
                     }
@@ -1060,8 +1152,12 @@
                 // 거래 후 잔고 계산을 위한 합계금액 저장
                 this.model.salesTotalPrice = TOTAL_SUMMARY.TOTAL_PRICE
 
+                // 이익율 계산
+                let SET_PROFIT_PER = (TOTAL_SUMMARY.PROFIT_PRICE === 0) ?
+                                     0 : parseFloat(TOTAL_SUMMARY.PROFIT_PRICE/Math.abs(TOTAL_SUMMARY.TOTAL_PRICE))*100
+                TOTAL_SUMMARY.PROFIT_PERCENT = SET_PROFIT_PER
                 let SUMMARY_DATA = HOT.getSourceDataAtRow(HOT_COUNT)
-                _merge(SUMMARY_DATA, TOTAL_SUMMARY)
+                _assign(SUMMARY_DATA, TOTAL_SUMMARY)
 
                 HOT.render()
             },
@@ -1421,12 +1517,241 @@
                 HOT.setDataAtRowProp(upt_values, 'set')
             },
 
-            // 매출 등록
-            doSubmit () {
-                console.log(this.doPreprocessModel())
+            // 명세서 팝업 오픈
+            doOpenSalesReport () {
+                this.$root.$emit('bv::show::modal', 'pop-sales-report')
             },
 
-            // handsontable table data 가공
+            // 거래처 상세 정보 팝업 오픈
+            doOpenCustomerInfo () {
+                this.$root.$emit('bv::show::modal','pop-customer-info')
+            },
+
+
+            /**********************************************************
+             * 매출 등록 관련
+             *********************************************************/
+
+            /**
+             * 목록에서 ROW를 클릭 후 해당 전표 단일 조회
+             * @param data (클릭한 ROW의 DATA)
+             */
+            getSalesData (data) {
+                const loader = this.$common.getLoader(this)
+
+                sales.fetchData(data).then(res => {
+                    const _M = this.model
+
+                    let _NEW_DATA
+                    _M.salesDay = res.SALES_DAY
+                    _M.member.code = res.MEMBER.MEMBER_CODE
+                    _M.warehouse.code = res.WAREHOUSE.WAREHOUSE_CODE
+                    _M.comment = res.SALES_COMMENT
+
+                    _NEW_DATA = this.doParseSalesData(res.CUSTOMER, res.SALES_ITEMS)
+                    _assign(_M.collect, this.doParseCollectData(res.COLLECT_ITEM))
+                    _assign(_M.customer, res.CUSTOMER)
+
+                    this.doCreateTable(false, _NEW_DATA)
+                    loader.hide()
+
+                    this.$nextTick(() => {
+                        if (this.listState.isSaveToPrint) {
+                            this.doOpenSalesReport()
+                            this.listState.isSaveToPrint = false
+                        }
+                    })
+                }).catch((err) => {
+                    loader.hide()
+                    this.showAlertToWarning(this.$common.parseErrorMsg(err))
+                })
+            },
+
+
+            /**
+             * 불러온 단일 데이터 중 매출 상품목록을 하나씩 포맷
+             * @param c (거래처 정보가 필요)
+             * @param d (조회 된 상품 배열)
+             */
+            doParseSalesData (c, d) {
+                let makeArr = []
+                d.forEach((e) => {
+                    makeArr.push(this.formatLoadData(c, e))
+                })
+                return makeArr
+            },
+
+            /**
+             * 불러온 단일 데이터 중 수금을 data bind 위해 가공
+             * @param d (조회 된 수금 객체)
+             */
+            doParseCollectData (d) {
+                let getCollectDiv = '1'
+                switch (_get(d, 'COLLECT_DIV', 'CASH')) {
+                    case 'CASH':
+                        getCollectDiv = '1'
+                        break
+                    case 'DEPOSIT':
+                        getCollectDiv = '2'
+                        break
+                    case 'CREDIT':
+                        getCollectDiv = '3'
+                        break
+                    case 'ETC':
+                        getCollectDiv = '4'
+                        break
+                }
+
+                const SET_BANK_NO = (_get(d, 'BANK.REG_NO'))?_get(d, 'BANK.REG_NO'):null
+                const SET_PRICE = (_get(d, 'COLLECT_PRICE'))?_get(d, 'COLLECT_PRICE'):null
+                const SET_DC_PRICE = (_get(d, 'DC_PRICE'))?_get(d, 'DC_PRICE'):null
+                const SET_TOT_PRICE = SET_PRICE + SET_DC_PRICE
+                const makeObj = {
+                    div: getCollectDiv,
+                    bank: {
+                        REG_NO: SET_BANK_NO
+                    },
+                    memo: null,
+                    price: {
+                        value: SET_PRICE,
+                        dc: SET_DC_PRICE,
+                        total: SET_TOT_PRICE
+                    }
+                }
+                return makeObj
+            },
+
+            /**
+             * 불러온 단일 데이터 중 상품데이터를 스키마에 맞게 가공
+             * @param c (거래처 정보가 필요)
+             * @param d (조회 된 상품 배열)
+             */
+            formatLoadData (c, d) {
+                const getCustomer = c
+
+                // 거래처 부가세 구분
+                const getCustomerStax = getCustomer.STAX
+                // 상품 과세면세 구분
+                const getProductTax = d.PRODUCT.TAX_DIV
+                // 상품 판매단가
+                const getProductPpu = d.SALES_PPU
+                const getProductPurPpu = d.PURCHASE_PPU
+
+                // TODO 저장시점의 HISTORY 노출 필요?
+                // TODO IS_EVENT 가 2개 들어있음 (is_EVENT)
+                let setHistory = true
+                let setTradeType = '매출'
+                switch (d.SALES_TRADE_TYPE) {
+                    case 'SALES':
+                        setTradeType = '매출'
+                        break
+                    case 'NORMAL_RETURN':
+                        setTradeType = '정상반품'
+                        break
+                    case 'BAD_RETURN':
+                        setTradeType = '불량반품'
+                        break
+                }
+
+                let SET_BOX_AMT = d.BOX_AMOUNT
+                let SET_ITEM_AMT = d.ITEM_AMOUNT
+                let SET_TOT_AMT = Math.abs(d.SALES_AMOUNT)
+                let SET_SERVICE_AMT = Math.abs(d.SERVICE_AMOUNT)
+                let SET_DC_PER = (getCustomer.DC_PERCENT) ? parseInt(getCustomer.DC_PERCENT) : 0
+                let SET_SALES_PRICE = getProductPpu * SET_TOT_AMT
+                let SET_PURCHASE_PRICE = getProductPurPpu * SET_TOT_AMT
+                let SET_DC_PRICE = Math.abs(d.DC_PRICE)
+                let SET_TOT_PRICE = SET_SALES_PRICE - SET_DC_PRICE
+
+                let ARR_CAL_PRICE = this.doRetCalPrice(SET_TOT_PRICE, getCustomerStax, getProductTax)
+                let SET_SUPPLY_PRICE = ARR_CAL_PRICE[0]
+                let SET_TAX_PRICE = ARR_CAL_PRICE[1]
+
+                let SET_STAX_PRICE = 0
+                if (getCustomerStax === '2') {
+                    if (getProductTax === '1') {
+                        SET_STAX_PRICE = SET_SALES_PRICE * 0.1
+                        SET_PURCHASE_PRICE = Math.floor(SET_PURCHASE_PRICE * 1.1)
+                    }
+                }
+
+                // 이익금구하기
+                let SET_PROFIT_PRICE = SET_SALES_PRICE - SET_PURCHASE_PRICE
+                let SET_PROFIT_PER = (SET_TOT_PRICE === 0) ?
+                    0 : (SET_PROFIT_PRICE / Math.abs(SET_TOT_PRICE)) * 100
+
+                const retObj = {
+                    IS_EMPTY: false, // 테이블 하단 빈객체 구분 값
+                    HISTORY: setHistory,
+                    SALES_DIV: setTradeType,
+                    EVENT_DIV: d.IS_EVENT,
+                    PRODUCT: d.PRODUCT,
+
+                    BOX_AMOUNT: SET_BOX_AMT,
+                    ITEM_AMOUNT: SET_ITEM_AMT,
+                    TOTAL_AMOUNT: SET_TOT_AMT,
+                    SERVICE_AMOUNT: SET_SERVICE_AMT,
+
+                    PURCHASE_PPU: getProductPurPpu,
+                    SALES_PPU: getProductPpu,
+                    BEFORE_PPU: getProductPpu,
+                    // MM_PPU: undefined,
+
+                    PURCHASE_PRICE: SET_PURCHASE_PRICE,
+                    SALES_PRICE: SET_SALES_PRICE,
+                    DC_PRICE: SET_DC_PRICE,
+                    SUPPLY_PRICE: SET_SUPPLY_PRICE,
+                    TAX_PRICE: SET_TAX_PRICE,
+                    TOTAL_PRICE: SET_TOT_PRICE,
+                    PROFIT_PRICE: SET_PROFIT_PRICE,
+
+                    DC_PERCENT: SET_DC_PER,
+                    PROFIT_PERCENT: SET_PROFIT_PER,
+
+                    MEMO: d.COMMENT
+                }
+
+                return retObj
+            },
+
+            // 매출 등록 시 거래처 과세구분 포맷
+            doFormatCustomerTaxDiv (PARAM) {
+                let getCustomerTaxDiv = ''
+                switch (PARAM) {
+                    case '1':
+                        getCustomerTaxDiv = 'INCLUDE'
+                        break
+                    case '2':
+                        getCustomerTaxDiv = 'EXCLUDE'
+                        break
+                }
+                return getCustomerTaxDiv
+            },
+
+            // 매출 등록 시 수금 구분 포맷
+            doFormatCollectDiv (PARAM) {
+                let getCollectDiv = ''
+                switch (PARAM) {
+                    case '1':
+                        getCollectDiv = 'CASH'
+                        break
+                    case '2':
+                        getCollectDiv = 'DEPOSIT'
+                        break
+                    case '3':
+                        getCollectDiv = 'CREDIT'
+                        break
+                    case '4':
+                        getCollectDiv = 'ETC'
+                        break
+                }
+                return getCollectDiv
+            },
+
+            /**
+             * 매출 등록 직전 API에 맞춰서 상품배열 포맷
+             * @returns (가공 된 배열 리턴)
+             */
             doPreprocessModel () {
                 let retModel = []
                 const getTableData = this.hot.getSourceData()
@@ -1449,10 +1774,19 @@
                     }
 
                     const getProduct = item.PRODUCT
+                    let setProductTaxDiv = ''
+                    switch (getProduct.TAX_DIV) {
+                        case '1':
+                            setProductTaxDiv = 'TAX'
+                            break
+                        case '2':
+                            setProductTaxDiv = 'TAX_FREE'
+                            break
+                    }
                     const salesProductItem = {
                         AGENT_NO: this.AGENT_NO,
                         PRODUCT_CODE: getProduct.PRODUCT_CODE,
-                        PRODUCT_TAX_DIV: getProduct.TAX_DIV,
+                        PRODUCT_TAX_DIV: setProductTaxDiv,
                         BOX_GET_AMOUNT: getProduct.BOX_GET_AMOUNT,
                         ITEM_AMOUNT: item.ITEM_AMOUNT,
                         BOX_AMOUNT: item.BOX_AMOUNT,
@@ -1460,7 +1794,7 @@
                         SERVICE_AMOUNT: item.SERVICE_AMOUNT,
                         DC_PRICE: item.DC_PRICE,
                         SALES_TRADE_TYPE: setTradeType,
-                        IS_EVENT: item.IS_EMPTY,
+                        IS_EVENT: item.EVENT_DIV,
                         SALES_PPU: item.SALES_PPU,
                         PURCHASE_PPU: item.PURCHASE_PPU,
                         COMMENT: item.MEMO
@@ -1471,10 +1805,169 @@
                 return retModel
             },
 
-            // 명세서 팝업 오픈
-            doOpenSalesReport () {
-                this.$root.$emit('bv::show::modal', 'pop-sales-report')
+            /**
+             * 매출 등록 & 수정
+             * @param PARAM ('P')
+             * P가 넘어올 시 저장 후 인쇄 처리
+             */
+            doSubmit (PARAM) {
+                const _m = this.model
+
+                if (!_get(_m, 'salesDay')) {
+                    this.showCommonAlert('매출일자를 선택해주세요.')
+                    return
+                }
+                if (!_get(_m, 'customer.CUSTOMER_CODE')) {
+                    this.showCommonAlert('거래처를 선택해주세요.')
+                    return
+                }
+                if (!_get(_m, 'member.code')) {
+                    this.showCommonAlert('담당자를 선택해주세요.')
+                    return
+                }
+                if (_get(_m, 'collect.div') === '2' &&
+                    _get(_m, 'collect.price.total') === 0 &&
+                    !_get(_m, 'collect.bank.REG_NO')) {
+                    this.showCommonAlert('수금계좌를 선택해주세요.')
+                    return
+                }
+
+                const postData = {
+                    AGENT_NO: this.AGENT_NO, // 가맹점 코드
+                    REGISTER_CODE: this.USER_CODE, // 등록(로그인)사원 코드
+                    MEMBER_CODE: _m.member.code, // 적용 사원 코드
+                    CUSTOMER_CODE: _m.customer.CUSTOMER_CODE, // 거래처 코드
+                    WAREHOUSE_CODE: _m.warehouse.code, // 창고 코드
+                    SALES_ITEMS: [...this.doPreprocessModel()], // 매출 상품 목록
+                    COLLECT_ITEM: { // 수금 (null able)
+                        AGENT_NO: this.AGENT_NO, // 가맹점 코드
+                        COLLECT_DIV: this.doFormatCollectDiv(_m.collect.div), // 수금 구분 ['CASH': 현금, 'DEPOSIT': 무통장입금, 'CREDIT': 카드, 'ETC': 기타]
+                        BANK_REG_NO: (_m.collect.bank.REG_NO)?_m.collect.bank.REG_NO:null, // 은행계좌 일련번호 (무통장입금인 경우만)
+                        COLLECT_PRICE: (_m.collect.price.value)?_m.collect.price.value:0, // 수금액
+                        DC_PRICE: (_m.collect.price.dc)?_m.collect.price.dc:0, // 수금 할인액
+                        COMMENT: "" // 수금 비고
+                    },
+                    SALES_DAY: this.getFormatTime(_m.salesDay), // 매출일자
+                    CUSTOMER_TAX_DIV: this.doFormatCustomerTaxDiv(_m.customer.STAX), // 거래처 과세 구분 ['INCLUDE': 부가세포함, 'EXCLUDE': 부가세별도]
+                    SALES_COMMENT: _m.comment // 매출 전체 비고
+                }
+
+                // TODO 금액이 0이고 현금일 때 수금 객체 삭제?
+                // if (_get(_m, 'collect.price.total') === 0 &&
+                //     _get(_m, 'collect.div') === '1') delete postData.COLLECT_ITEM
+
+                const getListState = this.listState
+                if (getListState.isModify && getListState.model.SALES_CODE) {
+                    // 수정
+                    this.confirmToUpdate({
+                        sales_day: getListState.model.SALES_DAY,
+                        sales_code: getListState.model.SALES_CODE,
+                        customer_code: getListState.model.CUSTOMER_CODE
+                    }, postData)
+                } else {
+                    // 신규등록
+                    this.confirmToSave(postData, PARAM)
+                }
+            },
+
+            confirmToDelete () {
+                this.showAlertToDelete(() => this.delete())
+            },
+
+            confirmToSave (model, PARAM) {
+                this.showAlertToSave(() => this.save(model, PARAM))
+            },
+
+            confirmToUpdate (obj, model) {
+                this.showAlertToUpdate(() => this.update(obj, model))
+            },
+
+
+            save (postData, PARAM) {
+                const loader = this.$common.getLoader(this)
+
+                sales.createSales(postData).then((data) => {
+                    loader.hide()
+
+                    this.showModalSuccess(
+                        '저장완료',
+                        '확인',
+                        () => {
+                            this.doInitData()
+
+                            this.$nextTick(() => {
+                                if (PARAM === 'P') {
+                                    this.listState.isSaveToPrint = true
+                                    _assign(this.listState.model, data)
+
+                                    this.$nextTick(() => {
+                                        this.$salesList().doListLoad(this.listState.model)
+                                    })
+                                } else {
+                                    this.$salesList().doListLoad()
+                                }
+                            })
+                        })
+                }).catch((err) => {
+                    loader.hide()
+                    this.showAlertToWarning(this.$common.parseErrorMsg(err))
+                })
+            },
+
+
+            update (obj, postData) {
+                const loader = this.$common.getLoader(this)
+
+                sales.updateSales(obj, postData).then((data) => {
+                    loader.hide()
+
+                    this.showModalSuccess(
+                        '수정완료',
+                        '확인',
+                        () => {
+                            this.$salesList().doListLoad()
+                        })
+                }).catch((err) => {
+                    loader.hide()
+                    this.showAlertToWarning(this.$common.parseErrorMsg(err))
+                })
+            },
+
+
+            delete () {
+                const getState = this.listState.model
+                const postData = {
+                    sales_day: getState.SALES_DAY,
+                    sales_code: getState.SALES_CODE,
+                    customer_code: getState.CUSTOMER_CODE
+                }
+
+                const loader = this.$common.getLoader(this)
+
+                sales.deleteSales(postData).then((data) => {
+                    loader.hide()
+
+                    this.showModalSuccess(
+                        '삭제완료',
+                        '확인',
+                        () => {
+                            this.doInitData()
+                            this.$salesList().doListLoad()
+                        })
+                }).catch((err) => {
+                    loader.hide()
+                    this.showAlertToWarning(this.$common.parseErrorMsg(err))
+                })
+            },
+
+            // 신규등록 혹은 등록 상태 초기화
+            doInitData () {
+                _assign(this.listState, this.initModel.listState)
+                _assign(this.model, this.initModel.model)
+
+                this.doCreateTable()
             }
+
         }
     }
 </script>

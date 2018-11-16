@@ -76,9 +76,10 @@
                         <tbody class="list-area" id="list-wrap">
                         <tr align="center"
                             v-for="item in listModel.data"
+                            ref="list-item"
                             class="list-item cursor"
                             :class="{ on: chkMatchListState(item) }"
-                            @click="getLoadData($event, item)">
+                            @click="getLoadData(item)">
                             <!-- TODO 복사저장 트레킹 fn_trk('B003') //-->
                             <td>
                                 <a href="javascript:void(0)"
@@ -165,23 +166,6 @@
 
 
 
-        <!-- 명세표인쇄 팝업 //-->
-        <b-modal id="pop-sales-batch-report"
-                 :lazy="true"
-                 size="md"
-                 body-class="p-0"
-                 hide-header
-                 hide-footer>
-            <PopSalesReport :state="listState" :isBatch="true">
-                <template slot="footer">
-                    <button class="btn btn-outline-dark"
-                            @click="$root.$emit('bv::hide::modal','pop-sales-batch-report')">닫기
-                    </button>
-                </template>
-            </PopSalesReport>
-        </b-modal>
-
-
     </b-card>
 </template>
 
@@ -189,8 +173,9 @@
     import {sales} from '../api/index'
     import Common from './mixin/common'
     import numeral from 'numeral'
-    import _merge from 'lodash/merge'
-    import _match from 'lodash/isMatch'
+    import _assign from 'lodash/assign'
+    import _findIndex from 'lodash/findIndex'
+    import _isEqal from 'lodash/isEqual'
 
     // 조건조회 관련
     import CustomerPicker from "./inputs/CustomerPicker.vue"
@@ -227,13 +212,6 @@
                         code: null
                     }
                 },
-                listState: {
-                    model: {
-                        SALES_CODE: null,
-                        SALES_DAY: null,
-                        CUSTOMER_CODE: null
-                    }
-                },
                 listModel: {
                     page: 1,
                     total: 1,
@@ -248,7 +226,6 @@
                     }
                 },
                 node: {
-                    entry: null, // 매출등록 컴포넌트
                     root: null,
                     header: null,
                     footer: null,
@@ -261,18 +238,20 @@
         computed: {
             getSalesSummary () {
                 return this.listModel.summary
+            },
+            getListItems () {
+                return this.$refs['list-item']
             }
         },
         mounted () {
-            this.node.entry = this.$parent.$refs['sales-entry']
-            this.node.root = this.$parent.$refs['list-panel']
+            this.node.root = this.$salesListWrap()
             this.node.header = this.$refs['list-header']
             this.node.footer = this.$refs['list-footer']
             this.node.body = this.$refs['list-body']
             this.node.bodyTitle = this.node.body.querySelector('.tit-area')
             this.node.bodyList = this.node.body.querySelector('.scr-area')
 
-            window.addEventListener("resize", this.debounce(this.doResizeRender))
+            window.addEventListener("resize", this.$common.debounce(this.doResizeRender))
 
             this.doResizeRender()
             this.doListLoad()
@@ -305,7 +284,7 @@
             },
 
             // 매출목록 조회
-            async doListLoad () {
+            async doListLoad (cbData) {
                 const postData = {
                     start_day: this.getFormatTime(this.model.startDay),
                     end_day: this.getFormatTime(this.model.endDay),
@@ -316,13 +295,10 @@
                 }
 
                 this.isLoading = true
-                const loader = this.$loading.show({
-                    container: this.$el,
-                    canCancel: false
-                })
+                const loader = this.$common.getLoader(this)
 
                 const getSummary = await this.doSummaryLoad(postData)
-                _merge(this.getSalesSummary, getSummary)
+                _assign(this.getSalesSummary, getSummary)
 
                 sales.fetch(postData).then((data) => {
                     let getTotal = (data.total === 0) ? 1 : data.total
@@ -335,12 +311,26 @@
                     loader.hide()
 
                     const getScrollNode = this.node.bodyList
-                    this.scrollTo(getScrollNode, getScrollNode.scrollTop, 0, 300, 0)
+                    this.$common.scrollTo(getScrollNode, getScrollNode.scrollTop, 0, 300, 0)
+
+                    this.$nextTick(() => {
+                        if (cbData) {
+                            this.listModel.data.forEach((e, i) => {
+                                if (
+                                    cbData.SALES_CODE === e.SALES_CODE &&
+                                    cbData.SALES_DAY === e.SALES_DAY &&
+                                    cbData.CUSTOMER_CODE === e.CUSTOMER_CODE
+                                ) {
+                                    this.getListItems[i].click()
+                                }
+                            })
+                        }
+                    })
                 }).catch((err) => {
                     this.isLoading = false
                     loader.hide()
 
-                    this.$snotify.error('매출목록 조회 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('매출목록 조회 실패', this.$common.parseErrorMsg(err))
                 })
             },
 
@@ -350,13 +340,13 @@
                     SALES_DAY: item.SALES_DAY,
                     CUSTOMER_CODE: item.CUSTOMER_CODE
                 }
-                return _match(this.listState.model, matchObj)
+                return _isEqal(this.$salesEntry().listState.model, matchObj)
             },
 
             // 매출 합계 추가 조회
             doSummaryLoad (postData) {
                 return sales.fetchSummary(postData).then((data) => data).catch((err) => {
-                    this.$snotify.error('매출목록집계 조회 실패', this.parseErrorMsg(err))
+                    this.$snotify.error('매출목록집계 조회 실패', this.$common.parseErrorMsg(err))
                 })
             },
 
@@ -377,8 +367,14 @@
              * 조회 된 매출목록의 ROW 클릭 시 원장 및 데이터 조회
              * @param obj
              */
-            getLoadData (e, obj) {
-                let GET_ROW = e.target.parentNode
+            getLoadData (obj) {
+                const getDataRow = this.listModel.data.find((e) => {
+                    return (e.SALES_CODE === obj.SALES_CODE &&
+                        e.SALES_DAY === obj.SALES_DAY &&
+                        e.CUSTOMER_CODE === obj.CUSTOMER_CODE)
+                })
+                const getFindIdx = _findIndex(this.listModel.data, getDataRow)
+                let GET_ROW = this.getListItems[getFindIdx]
                 let GET_SIBLINGS = this.getSiblings(GET_ROW)
 
                 // 형제 ROW들의 on 클래스 제거
@@ -389,16 +385,15 @@
                 GET_ROW.classList.add('on')
 
                 // 리스트 상태 값 저장 (페이지 이동 시)
-                this.listState.model.SALES_CODE = obj.SALES_CODE
-                this.listState.model.SALES_DAY = obj.SALES_DAY
-                this.listState.model.CUSTOMER_CODE = obj.CUSTOMER_CODE
+                this.$salesEntry().listState.model.SALES_CODE = obj.SALES_CODE
+                this.$salesEntry().listState.model.SALES_DAY = obj.SALES_DAY
+                this.$salesEntry().listState.model.CUSTOMER_CODE = obj.CUSTOMER_CODE
 
                 // 매출등록 컴포넌트 수정상태 변경
-                this.node.entry.listState.isModify = true
+                this.$salesEntry().listState.isModify = true
 
                 // 명세서 출력여부 세팅
-                this.node.entry.listState.isPrint = obj.SLIP_YN
-                this.node.entry.listState.model = this.listState.model
+                this.$salesEntry().listState.isPrint = obj.SLIP_YN
 
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
@@ -407,8 +402,17 @@
                     end_day: this.getFormatTime(this.model.endDay)
                 }
 
+                const postData = {
+                    sales_day: obj.SALES_DAY,
+                    sales_code: obj.SALES_CODE,
+                    customer_code: obj.CUSTOMER_CODE
+                }
+
+                // 매출 단일 조회
+                this.$salesEntry().getSalesData(postData)
+
                 // 매출 원장 조회
-                this.$parent.$refs['sales-ledger'].getSalesLedger(postLedgerData)
+                this.$salesLedger().getSalesLedger(postLedgerData)
             },
 
             // 형제 노드 찾기
@@ -423,7 +427,7 @@
 
             // 매출목록 인쇄
             goPrint () {
-
+                console.log('인쇄')
             },
 
             // 명세서 팝업 오픈

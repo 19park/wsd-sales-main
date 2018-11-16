@@ -140,10 +140,7 @@
              */
             getSalesLedger (postData) {
                 this.isLoading = true
-                const loader = this.$loading.show({
-                    container: this.$el,
-                    canCancel: false
-                })
+                const loader = this.$common.getLoader(this)
 
                 this.model.customer.name = postData.customer_name
                 delete postData.customer_name
