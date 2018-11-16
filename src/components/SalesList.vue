@@ -84,7 +84,8 @@
                             <td>
                                 <a href="javascript:void(0)"
                                    class="btn btn-sm btn-black"
-                                   @click="fnCopySave(this)">복사저장</a>
+
+                                   @click="doSalesCopy()">복사저장</a>
                             </td>
                             <td align="left" class="elip">
                                 {{
@@ -163,9 +164,6 @@
                 </div>
             </div>
         </b-card-footer>
-
-
-
     </b-card>
 </template>
 
@@ -368,32 +366,17 @@
              * @param obj
              */
             getLoadData (obj) {
-                const getDataRow = this.listModel.data.find((e) => {
-                    return (e.SALES_CODE === obj.SALES_CODE &&
-                        e.SALES_DAY === obj.SALES_DAY &&
-                        e.CUSTOMER_CODE === obj.CUSTOMER_CODE)
-                })
-                const getFindIdx = _findIndex(this.listModel.data, getDataRow)
-                let GET_ROW = this.getListItems[getFindIdx]
-                let GET_SIBLINGS = this.getSiblings(GET_ROW)
-
-                // 형제 ROW들의 on 클래스 제거
-                GET_SIBLINGS.forEach((e) => {
-                    e.classList.remove('on')
-                })
-                // 현재 ROW에 on 클래스 추가
-                GET_ROW.classList.add('on')
-
                 // 리스트 상태 값 저장 (페이지 이동 시)
-                this.$salesEntry().listState.model.SALES_CODE = obj.SALES_CODE
-                this.$salesEntry().listState.model.SALES_DAY = obj.SALES_DAY
-                this.$salesEntry().listState.model.CUSTOMER_CODE = obj.CUSTOMER_CODE
+                const getSalesEntry = this.$salesEntry()
+                getSalesEntry.listState.model.SALES_CODE = obj.SALES_CODE
+                getSalesEntry.listState.model.SALES_DAY = obj.SALES_DAY
+                getSalesEntry.listState.model.CUSTOMER_CODE = obj.CUSTOMER_CODE
 
                 // 매출등록 컴포넌트 수정상태 변경
-                this.$salesEntry().listState.isModify = true
+                getSalesEntry.listState.isModify = true
 
                 // 명세서 출력여부 세팅
-                this.$salesEntry().listState.isPrint = obj.SLIP_YN
+                getSalesEntry.listState.isPrint = obj.SLIP_YN
 
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
@@ -409,7 +392,7 @@
                 }
 
                 // 매출 단일 조회
-                this.$salesEntry().getSalesData(postData)
+                getSalesEntry.getSalesData(postData)
 
                 // 매출 원장 조회
                 this.$salesLedger().getSalesLedger(postLedgerData)

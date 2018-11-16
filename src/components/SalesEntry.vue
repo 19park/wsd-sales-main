@@ -1962,8 +1962,8 @@
 
             // 신규등록 혹은 등록 상태 초기화
             doInitData () {
-                _assign(this.listState, this.initModel.listState)
-                _assign(this.model, this.initModel.model)
+                _assign(this.listState, _cloneDeep(this.initModel.listState))
+                _assign(this.model, _cloneDeep(this.initModel.model))
 
                 this.doCreateTable()
             }
