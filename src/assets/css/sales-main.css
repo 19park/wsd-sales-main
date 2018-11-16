@@ -93,7 +93,7 @@ html, body {
     padding: 3px 6px;
 }
 
-#wrapper #entry-panel #btn_info { font-size: 2rem; }
+#wrapper #entry-panel #btn_info { font-size: 1.7rem; }
 
 #wrapper #list-panel {
     flex-grow: 1;
@@ -198,6 +198,11 @@ html, body {
 
 .handsontable td.htViewRow .btn-view.m:hover {
     background-color: #b93d3d;
+}
+
+.handsontable td.htHistory {
+    background-color: #a7ffbb;
+    color: #000;
 }
 
 /**

@@ -51,7 +51,6 @@ export default {
             }
         })
 
-
         // use custom plugin
         Vue.use(getRefs)
         Vue.use(common)

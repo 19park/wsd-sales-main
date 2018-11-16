@@ -165,7 +165,7 @@
                         this.$toasted.show(this.fetchText.noResults)
                     } else {
                         // CHECKED FALSE PROP ADD
-                        data.list.forEach((e, i) => {
+                        data.list.forEach((e) => {
                             e.CHECKED = false
                         })
                         this.hotOptions.data = this.hotOptions.data.concat(data.list)
@@ -212,7 +212,7 @@
 
 <style scoped>
     #loader-container {
-        height: 400px;
+        max-height: 400px;
         overflow: auto;
     }
 </style>

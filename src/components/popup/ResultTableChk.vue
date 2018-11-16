@@ -98,8 +98,29 @@
                     return false
                 }
             })
+
+            this.hot.updateSettings({
+                cells: this.doCellRenderer
+            })
         },
         methods: {
+            doCellRenderer (row, col) {
+                const cellPrp = {}
+                const HOT = this.hot
+
+                if (!HOT) {
+                    return {}
+                }
+
+                if (HOT.getDataAtRowProp(row, 'HISTORY')) {
+                    cellPrp.renderer = function (instance, td, row, col, prop, value, cellProperties) {
+                        Handsontable.cellTypes[cellProperties.type].renderer.apply(this, arguments)
+                        td.classList.add('htHistory')
+                    }
+                }
+                return cellPrp
+            },
+
             doSelect (row) {
                 if (!this.hot.countRows()) return false
                 const getData = this.hot.getSourceDataAtRow(row)
