@@ -65,7 +65,7 @@
             </div>
         </b-card-body>
         <b-card-footer id="ledger-footer" ref="ledger-footer">
-            <strong v-if="$salesEntry().model.customer.CUSTOMER_NAME">
+            <strong v-if="$salesMain() && $salesEntry().model.customer.CUSTOMER_NAME">
                 거래처명 : {{$salesEntry().model.customer.CUSTOMER_NAME}}
             </strong>
             <p v-else>
@@ -117,13 +117,15 @@
                 const getNode = this.node
                 const GET_ROOT_H = getNode.root.clientHeight
 
-                if(GET_ROOT_H < 300) { return false }
+                if (GET_ROOT_H < 200) {
+                    return false
+                }
                 const GET_HEADER_H = getNode.header.clientHeight
                 const GET_FOOTER_H = getNode.footer.clientHeight
                 const GET_TARGET = getNode.body
 
                 // 초기 높이 값 세팅
-                GET_TARGET.style.height = `${GET_ROOT_H-GET_HEADER_H-GET_FOOTER_H-20}px`
+                GET_TARGET.style.height = `${GET_ROOT_H - GET_HEADER_H - GET_FOOTER_H - 10}px`
 
                 const GET_SCROLL_ELEM = getNode.bodyList
                 const scrollBarWidth = GET_SCROLL_ELEM.offsetWidth - GET_SCROLL_ELEM.clientWidth;
@@ -143,8 +145,12 @@
                 sales.fetchLedger(postData).then((data) => {
                     this.model.list = data.list
 
-                    this.isLoading = false
-                    loader.hide()
+                    this.$nextTick(() => {
+                        this.$common.scrollTo(this.node.bodyList, this.node.bodyList.scrollTop, this.node.bodyList.scrollHeight, 300, 0)
+
+                        this.isLoading = false
+                        loader.hide()
+                    })
                 }).catch((err) => {
                     this.isLoading = false
                     loader.hide()
@@ -178,9 +184,13 @@
                 return numeral(n).format()
             },
 
-
             doLoadData (data) {
-                console.log(data)
+                const postData = {
+                    SALES_DAY: data.DAY,
+                    SALES_CODE: data.CODE,
+                    CUSTOMER_CODE: this.$salesEntry().model.customer.CUSTOMER_CODE
+                }
+                this.$salesList().getLoadData(postData, false)
             }
         }
     }

@@ -260,7 +260,7 @@
                 const getNode = this.node
                 const GET_ROOT_H = getNode.root.clientHeight
 
-                if (GET_ROOT_H < 300) {
+                if (GET_ROOT_H < 200) {
                     return false
                 }
                 const GET_HEADER_H = getNode.header.clientHeight
@@ -268,7 +268,7 @@
                 const GET_TARGET = getNode.body
 
                 // 초기 높이 값 세팅
-                GET_TARGET.style.height = `${GET_ROOT_H - GET_HEADER_H - GET_FOOTER_H - 20}px`
+                GET_TARGET.style.height = `${GET_ROOT_H - GET_HEADER_H - GET_FOOTER_H - 10}px`
 
                 const GET_SCROLL_ELEM = getNode.bodyList
                 const scrollBarWidth = GET_SCROLL_ELEM.offsetWidth - GET_SCROLL_ELEM.clientWidth;
@@ -312,6 +312,7 @@
                     this.$common.scrollTo(getScrollNode, getScrollNode.scrollTop, 0, 300, 0)
 
                     this.$nextTick(() => {
+                        // 저장 후 인쇄 상태라면 DATA 체크하여 클릭
                         if (cbData) {
                             this.listModel.data.forEach((e, i) => {
                                 if (
@@ -363,9 +364,10 @@
 
             /**
              * 조회 된 매출목록의 ROW 클릭 시 원장 및 데이터 조회
-             * @param obj
+             * @param obj (매출 코드,일자, 거래처 코드)
+             * @param isLoadLedger (원장 추가 로딩 여부)
              */
-            getLoadData (obj) {
+            getLoadData (obj, isLoadLedger = true) {
                 // 리스트 상태 값 저장 (페이지 이동 시)
                 const getSalesEntry = this.$salesEntry()
                 getSalesEntry.listState.model.SALES_CODE = obj.SALES_CODE
@@ -376,12 +378,12 @@
                 getSalesEntry.listState.isModify = true
 
                 // 명세서 출력여부 세팅
-                getSalesEntry.listState.isPrint = obj.SLIP_YN
+                getSalesEntry.listState.isPrint = (obj.SLIP_YN) ? obj.SLIP_YN : true
 
                 const postLedgerData = {
                     customer_code: obj.CUSTOMER_CODE,
-                    start_day: this.getFormatTime(this.model.startDay),
-                    end_day: this.getFormatTime(this.model.endDay)
+                    start_day: this.getFormatTime(new Date().setFullYear(new Date().getFullYear() - 1)),
+                    end_day: this.getFormatTime(new Date())
                 }
 
                 const postData = {
@@ -394,7 +396,7 @@
                 getSalesEntry.getSalesData(postData)
 
                 // 매출 원장 조회
-                this.$salesLedger().getSalesLedger(postLedgerData)
+                if (isLoadLedger) this.$salesLedger().getSalesLedger(postLedgerData)
             },
 
             // 형제 노드 찾기

@@ -1,7 +1,7 @@
 <template>
     <div class="panel-body">
         <div class="box">
-            <table class="table table-bordered slim mb-0">
+            <table class="table table-bordered slim mb-2">
                 <tbody>
                 <tr class="title">
                     <!--<th width="7%" class="b1">-->
@@ -337,23 +337,29 @@
             ...mapGetters([
                 'getAmountTypeTxt'
             ]),
+            getSalesDivOpts () {
+                // 불량반품 사용 시 매출구분 옵션 불량반품 추가
+                return (_get(this.AGENT_SETTINGS, 'RETURN_DIV') === '0') ?
+                        ['매출', '정상반품'] :
+                        ['매출', '정상반품', '불량반품']
+            },
             getDisableType () {
                 return this.disableType
             },
             getAmtNumericPattern () {
-                return (this.AGENT_SETTINGS.A_POINT_DIV === 'Y') ? '0,0[00]' : '0,0'
+                return (_get(this.AGENT_SETTINGS, 'A_POINT_DIV') === 'Y') ? '0,0[00]' : '0,0'
             },
             getPpuNumericPattern () {
-                return (this.AGENT_SETTINGS.POINT_DIV === 'Y') ? '0,0[00]' : '0,0'
+                return (_get(this.AGENT_SETTINGS, 'POINT_DIV') === 'Y') ? '0,0[00]' : '0,0'
             },
             getCustomerBc () {
-                return numeral(this.model.customer.CUSTOMER_BC.NOW_BC).format()
+                return numeral(_get(this.model.customer, 'CUSTOMER_BC.NOW_BC')).format()
             },
             getCustomerAfterBc () {
-                return numeral(this.model.customer.CUSTOMER_BC.NOW_BC + this.model.salesTotalPrice).format()
+                return numeral(_get(this.model.customer, 'CUSTOMER_BC.NOW_BC') + this.model.salesTotalPrice).format()
             },
             getCustomerCreditBc () {
-                return numeral(this.model.customer.CREDIT_BC).format()
+                return numeral(_get(this.model.customer, 'CREDIT_BC')).format()
             }
         },
         data () {
@@ -430,7 +436,6 @@
                     salesTotalPrice: 0, // 작성중인 화면의 누적 합계금액
                 },
                 hotOptions: {
-                    // TODO 재고 저장 필요
                     salesMainSchema: {
                         // ID: undefined,
                         IS_SUMMARY: false,
@@ -471,12 +476,10 @@
                     colWidths: [
                         85, 170, 120, 70, 70, 70, 80, 90, 70, 90, 90, 90, 60, 100, 50, 80, 80, 50
                     ],
-                    // TODO 수량 계란에 따라 판/알 처리
                     colHeaders: [],
                     columns: [
                         // bind mounted
-                    ],
-                    salesDivOption: ['매출', '정상반품']
+                    ]
                 },
                 node: {
                     table: null
@@ -532,36 +535,30 @@
                 {
                     data: 'SALES_PRICE',
                     type: 'numeric',
-                    numericFormat: {pattern: this.getPpuNumericPattern},
+                    numericFormat: {pattern: '0,0'},
                     readOnly: true
                 },
-                {data: 'DC_PRICE', type: 'numeric', numericFormat: {pattern: this.getPpuNumericPattern}},
+                {data: 'DC_PRICE', type: 'numeric', numericFormat: {pattern: '0,0'}},
                 {
                     data: 'SUPPLY_PRICE',
                     type: 'numeric',
-                    numericFormat: {pattern: this.getPpuNumericPattern},
+                    numericFormat: {pattern: '0,0'},
                     readOnly: true
                 },
                 {
                     data: 'TAX_PRICE',
                     type: 'numeric',
-                    numericFormat: {pattern: this.getPpuNumericPattern},
+                    numericFormat: {pattern: '0,0'},
                     readOnly: true
                 },
-                {data: 'TOTAL_PRICE', type: 'numeric', numericFormat: {pattern: this.getPpuNumericPattern}},
+                {data: 'TOTAL_PRICE', type: 'numeric', numericFormat: {pattern: '0,0'}},
                 {data: 'SERVICE_AMOUNT', type: 'numeric', numericFormat: {pattern: this.getAmtNumericPattern}},
                 {data: 'MEMO', type: 'text'},
                 {data: 'EVENT_DIV', type: 'checkbox', className: 'htCenter htMiddle'},
-                // TODO 불량반품은 설정에 따라
-                {data: 'SALES_DIV', type: 'dropdown', source: this.hotOptions.salesDivOption},
+                {data: 'SALES_DIV', type: 'dropdown', source: this.getSalesDivOpts},
                 {type: 'text'},
                 {type: 'text'},
             ]
-
-            // 불량반품 사용 시 매출구분 옵션 불량반품 추가
-            if (getState.RETURN_DIV === '0') {
-                this.hotOptions.salesDivOption.push('불량반품')
-            }
 
             // this.node.table = document.getElementById('hot-table')
             this.node.table = this.$refs.hot
@@ -1102,7 +1099,6 @@
             },
 
             cbAddGoods (arr) {
-                // TODO 클릭한 ROW에 상품이 들어가도록 수정해야함
                 const HOT = this.hot
                 const makeArr = []
                 arr.forEach((e) => {
@@ -1201,6 +1197,7 @@
                 let nSupplyPrice = 0
                 let nTaxPrice = 0
 
+                nGetPrice = Math.ceil(nGetPrice)
                 switch (sCustomerStax) {
                     case "1": //부가세포함
                         if (sTaxDiv == "1") {//과세
@@ -1697,14 +1694,17 @@
                 let SET_TOT_AMT = Math.abs(d.SALES_AMOUNT)
                 let SET_SERVICE_AMT = Math.abs(d.SERVICE_AMOUNT)
                 let SET_DC_PER = (getCustomer.DC_PERCENT) ? parseInt(getCustomer.DC_PERCENT) : 0
-                let SET_SALES_PRICE = getProductPpu * SET_TOT_AMT
-                let SET_PURCHASE_PRICE = getProductPurPpu * SET_TOT_AMT
+                let SET_SALES_PRICE = Math.ceil(getProductPpu * SET_TOT_AMT)
+                let SET_PURCHASE_PRICE = Math.ceil(getProductPurPpu * SET_TOT_AMT)
                 let SET_DC_PRICE = Math.abs(d.DC_PRICE)
                 let SET_TOT_PRICE = SET_SALES_PRICE - SET_DC_PRICE
 
                 let ARR_CAL_PRICE = this.doRetCalPrice(SET_TOT_PRICE, getCustomerStax, getProductTax)
                 let SET_SUPPLY_PRICE = ARR_CAL_PRICE[0]
                 let SET_TAX_PRICE = ARR_CAL_PRICE[1]
+
+                // TODO 부가세 포함 상품에 따라 토탈금액이 부가세가 더해져서 다시 계산해줘야함.
+                SET_TOT_PRICE = SET_SUPPLY_PRICE +  SET_TAX_PRICE
 
                 let SET_STAX_PRICE = 0
                 if (getCustomerStax === '2') {
@@ -1937,6 +1937,8 @@
                             this.$nextTick(() => {
                                 if (PARAM === 'P') {
                                     this.listState.isSaveToPrint = true
+
+                                    if (data.AGENT_NO) delete data.AGENT_NO
                                     _assign(this.listState.model, data)
 
                                     this.$nextTick(() => {
@@ -1956,7 +1958,6 @@
 
             update (obj, postData) {
                 const loader = this.$common.getLoader(this)
-
                 sales.updateSales(obj, postData).then((data) => {
                     loader.hide()
 
@@ -2004,6 +2005,7 @@
                 _assign(this.listState, _cloneDeep(this.initModel.listState))
                 _assign(this.model, _cloneDeep(this.initModel.model))
 
+                this.$salesLedger().model.list = []
                 this.doCreateTable()
             }
 
