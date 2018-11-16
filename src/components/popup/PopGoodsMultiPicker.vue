@@ -157,7 +157,7 @@
 
                 const postData = this.getPostData
                 goods.fetch(postData).then((data) => {
-                    console.log("#################### 상품정보 조회 ###################", data)
+                    // console.log("#################### 상품정보 조회 ###################", data)
 
                     let resCnt = data.list.length
                     if (resCnt <= 0) {

@@ -19,7 +19,6 @@
                 </div>
             </PopCustomers>
         </b-modal>
-
     </div>
 </template>
 

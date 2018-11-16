@@ -1,4 +1,3 @@
-<!--suppress HtmlUnknownAttribute -->
 <template>
     <card class="mb-0">
         <div slot="header">

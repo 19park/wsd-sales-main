@@ -60,6 +60,7 @@
         },
         methods: {
             doNextAct () {
+                if (!this.model.code) return
                 this.$emit('nextAct')
             }
         }
