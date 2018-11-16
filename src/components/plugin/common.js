@@ -1,3 +1,4 @@
+import {HourGlass} from 'vue-loading-spinner'
 let common = {}
 
 common.install = function (Vue, options) {
@@ -89,6 +90,9 @@ common.install = function (Vue, options) {
             return self.$loading.show({
                 container: self.$el,
                 canCancel: false
+            },{
+                // Pass slots by their names
+                default: self.$createElement(HourGlass)
             })
         }
 
