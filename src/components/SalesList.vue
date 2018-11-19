@@ -187,6 +187,7 @@
 
 <script>
     import {sales} from '../api/index'
+    import {mapState} from 'vuex'
     import Common from './mixin/common'
     import numeral from 'numeral'
     import _get from 'lodash/get'
@@ -258,6 +259,10 @@
             }
         },
         computed: {
+            ...mapState([
+                'AGENT_NO',
+                'AUTH3_1'
+            ]),
             getSalesSummary () {
                 return this.listModel.summary
             },
@@ -430,12 +435,66 @@
 
             // 매출목록 엑셀저장
             goExcel () {
-                console.log('엑셀')
+                const getModel = this.model
+                const postData = {
+                    AGENT_NO: this.AGENT_NO,
+                    AUTH3_1: this.AUTH3_1,
+
+                    'SDATE': this.getFormatTime(getModel.startDay),
+                    'EDATE': this.getFormatTime(getModel.endDay),
+                    'SCH_CUSTOMER_CODE': getModel.customer.CUSTOMER_CODE,
+                    'SCH_MEMBER_CODE': getModel.member.code
+                }
+
+                sales.fetchListExcel(postData).then((data) => {
+                    let blob = new Blob([data], {type: 'application/vnd.ms-excel'})
+
+                    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                        window.navigator.msSaveOrOpenBlob(blob)
+                    } else {
+                        const url = window.URL.createObjectURL(blob)
+                        const link = document.createElement('a')
+
+                        link.href = url
+                        link.target = 'sales-excel'
+                        this.$el.appendChild(link)
+                        link.click()
+                    }
+                }).catch((err) => {
+                    this.$snotify.error('매출목록 엑셀변환 실패', this.$common.parseErrorMsg(err))
+                })
             },
 
             // 매출목록 인쇄
             goPrint () {
-                console.log('인쇄')
+                const getModel = this.model
+                const postData = {
+                    AGENT_NO: this.AGENT_NO,
+                    AUTH3_1: this.AUTH3_1,
+
+                    'SDATE': this.getFormatTime(getModel.startDay),
+                    'EDATE': this.getFormatTime(getModel.endDay),
+                    'SCH_CUSTOMER_CODE': getModel.customer.CUSTOMER_CODE,
+                    'SCH_MEMBER_CODE': getModel.member.code
+                }
+
+                sales.fetchListPrint(postData).then((data) => {
+                    let blob = new Blob([data], {type: 'text/html'})
+
+                    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                        window.navigator.msSaveOrOpenBlob(blob)
+                    } else {
+                        const url = window.URL.createObjectURL(blob)
+                        const link = document.createElement('a')
+
+                        link.href = url
+                        link.target = 'sales-excel'
+                        this.$el.appendChild(link)
+                        link.click()
+                    }
+                }).catch((err) => {
+                    this.$snotify.error('매출목록 인쇄 실패', this.$common.parseErrorMsg(err))
+                })
             },
 
             // 명세서 팝업 오픈

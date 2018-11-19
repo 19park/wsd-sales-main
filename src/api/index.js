@@ -5,6 +5,7 @@ import _get from 'lodash/get'
 export const SETTINGS = {
     DOMAIN: 'http://192.168.100.231:8080/wholedoc',
     DOMAIN_LIVE: 'https://www.wholedoc.net:8444/wholedoc',
+    DOMAIN_WSD: 'http://www.wholedoc.net/pages/sales',
     API_KEY: 'wholeDoc1hb23jh45h3j3v339d0fk90s9d8fd9e',
     WEB_TOKEN: 'WeB91F98eF7d3K2sdhKetnaD',
     UNAUTHORIZED: 401,
@@ -170,6 +171,28 @@ export const sales = {
             method: 'get',
             url: '/api/v6/salesLedger/simple',
             params: data
+        })
+    },
+
+    // 매출목록 엑셀변환
+    fetchListExcel (data) {
+        return request({
+            method: 'post',
+            url: `${SETTINGS.DOMAIN_WSD}/S_Excel.asp`,
+            data: data,
+            responseType: 'arraybuffer',
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8'
+            }
+        })
+    },
+
+    // 매출목록 인쇄
+    fetchListPrint (data) {
+        return request({
+            method: 'post',
+            url: `${SETTINGS.DOMAIN_WSD}/S_Print.asp`,
+            data: data
         })
     },
 
