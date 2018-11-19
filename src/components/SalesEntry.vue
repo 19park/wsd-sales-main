@@ -493,6 +493,18 @@
                 }
             }
         },
+        created () {
+            const self = this
+            window.addEventListener('keydown', function(e) {
+                if(e.keyCode === 119) {
+                    if(!self.isModify){
+                        self.doSubmit()
+                    }else{
+                        self.doSubmit('P')
+                    }
+                }
+            })
+        },
         mounted () {
             /**
              * 매출일자 설정에 따른 날짜 정의
@@ -509,10 +521,6 @@
                 }
             }
 
-            this.hotOptions.colHeaders = [
-                '상품추가', '품명(단가이력조회)', '[입수수량]규격', ...this.getAmountTypeTxt,
-                '단가', '금액', 'DC', '공급가', '부가세', '판매금액', '서비스', '비고', '행사', '거래구분▼', '이익', '삭제'
-            ]
             this.hotOptions.columns = [
                 {data: 'PRODUCT.VIEW_CODE', type: 'text', readOnly: true},
                 {data: 'PRODUCT.PRODUCT_NAME', type: 'text', readOnly: true},
@@ -648,6 +656,11 @@
                     arrHiddenCols.push(9, 10)
                 }
 
+                const arrHeaderCols = [
+                    '상품추가', '품명(단가이력조회)', '[입수수량]규격', ...this.getAmountTypeTxt,
+                    '단가', '금액', 'DC', '공급가', '부가세', '판매금액', '서비스', '비고', '행사', '거래구분▼', '이익', '삭제'
+                ]
+
                 let initData = (GET_DATA) ? GET_DATA : []
                 const emptyData = _cloneDeep(self.hotOptions.salesMainSchema)
                 const summaryData = _cloneDeep(self.hotOptions.salesMainSchema)
@@ -668,7 +681,7 @@
                     // fixedColumnsLeft: 2,
                     stretchH: 'all',
                     rowHeaders: true,
-                    colHeaders: self.hotOptions.colHeaders,
+                    colHeaders: arrHeaderCols,
                     colWidths: self.hotOptions.colWidths,
                     columns: self.hotOptions.columns,
                     manualColumnResize: true,
