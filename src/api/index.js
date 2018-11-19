@@ -196,12 +196,15 @@ export const sales = {
         })
     },
 
-    // 단가 변동 내역 조회
-    fetchPpuHistories (data) {
+    fetchReport ({url, data}) {
         return request({
-            method: 'get',
-            url: '/api/v6/salesPpuHistories',
-            params: data
+            method: 'post',
+            url,
+            data,
+            responseType: 'arraybuffer',
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8'
+            }
         })
     },
 
@@ -210,6 +213,17 @@ export const sales = {
         return request({
             method: 'get',
             url: url
+        })
+    },
+
+
+
+    // 단가 변동 내역 조회
+    fetchPpuHistories (data) {
+        return request({
+            method: 'get',
+            url: '/api/v6/salesPpuHistories',
+            params: data
         })
     },
 

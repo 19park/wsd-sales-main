@@ -2,7 +2,7 @@ import Vue from 'vue'
 import _get from 'lodash/get'
 import Moment from 'moment-timezone'
 
-import axios from 'axios'
+import {sales} from '../../api'
 
 /**
  * 공통사용함수 정의
@@ -29,32 +29,6 @@ const Common = {
             return Moment(_date).format(_format)
         },
 
-        /**  1일의 날짜형 리턴
-         * @_date : 해당 날자형 데이터
-         * */
-        getFirstDate (_date = null) {
-            let now
-            if (_date == null) {
-                now = new Date()
-            } else {
-                now = _date
-            }
-            return new Date(now.getFullYear(), now.getMonth(), 1)
-        },
-
-        /** 당월 말일의 날짜형 리턴
-         * * @_date : 해당 날자형 데이터
-         * */
-        getLastDate (_date = null) {
-            let now
-            if (_date == null) {
-                now = new Date()
-            } else {
-                now = _date
-            }
-            return new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        },
-
         /**
          * date 를 받아 yyyy-mm-dd format 으로 리턴
          */
@@ -66,16 +40,6 @@ const Common = {
         },
 
         /**
-         * date 를 받아 yyyy-mm-dd hh:mm format 으로 리턴
-         */
-        getFormatDateTime (date) {
-            // noinspection JSUnresolvedVariable, JSUnresolvedFunction
-            let zone = Moment.tz.guess()
-            // noinspection JSUnresolvedFunction, SpellCheckingInspection
-            return Moment.tz(date, zone).format('YYYY-MM-DD HH:mm')
-        },
-
-        /**
          * date 를 받아 yyyy-mm-ddTHH:mm:ssZ format 으로 리턴
          */
         getFullFormatTime (date) {
@@ -83,29 +47,6 @@ const Common = {
             let zone = Moment.tz.guess()
             // noinspection JSUnresolvedFunction
             return Moment.tz(date, zone).toISOString()
-        },
-
-        /****************************************** 숫자관련 ********************************************/
-        /**
-         * 숫자값 받아서 number 타입인지 체크 return
-         * @param s 숫자여부 판별할 값
-         * @returns {Boolean}  true: 숫자, false:
-         */
-        isNumber (s) {
-            s += '' // 문자열로 변환
-            s = s.replace(/^\s*|\s*$/g, '') // 좌우 공백 제거
-            // noinspection RedundantIfStatementJS
-            if (s === '' || isNaN(s)) return false
-            return true
-        },
-
-        /**
-         * n을 받아 콤마를 붙여 리턴
-         */
-        numberWithCommas (n) {
-            if (!n) return 0
-            let parts = n.toString().split('.')
-            return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (parts[1] ? '.' + parts[1] : '')
         },
 
         /**
@@ -144,14 +85,13 @@ const Common = {
             }
 
             const loader = self.$common.getLoader(self)
+            const postData = {
+                url: url,
+                data: data,
+            }
 
-            axios.post(url, data, {
-                responseType: 'arraybuffer',
-                headers: {
-                    'Content-type': 'application/json; charset=UTF-8'
-                }
-            }).then((res) => {
-                let blob = new Blob([res.data], {type: 'application/pdf'})
+            sales.fetchReport(postData).then((data) => {
+                let blob = new Blob([data], {type: 'application/pdf'})
 
                 if (window.navigator && window.navigator.msSaveOrOpenBlob) {
                     window.navigator.msSaveOrOpenBlob(blob)
